@@ -175,9 +175,9 @@ namespace XAsset
         {
             if (nameByHash)
             {
-                return Utility.GetMD5Hash(name) + AssetMgr.Extension;
+                return Utility.GetMD5Hash(name) + XAsset.Extension;
             }
-            return name.Replace("\\", "/").ToLower() + AssetMgr.Extension;
+            return name.Replace("\\", "/").ToLower() + XAsset.Extension;
         }
 
         private void Track(string asset, string bundle)

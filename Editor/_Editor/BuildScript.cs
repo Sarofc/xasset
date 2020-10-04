@@ -392,7 +392,7 @@ namespace XAsset
 
         public static Manifest GetManifest()
         {
-            return GetAsset<Manifest>(AssetMgr.ManifestAsset);
+            return GetAsset<Manifest>(XAsset.ManifestAsset);
         }
 
         public static XAssetSettings GetSettings()

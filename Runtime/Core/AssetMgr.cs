@@ -40,7 +40,7 @@ using Saro.Core.Services;
 
 namespace XAsset
 {
-    public sealed class AssetMgr : IAssetManager, IService, IHasUpdate
+    public sealed class XAsset : IAssetManager, IService, IHasUpdate
     {
         public static readonly string ManifestAsset = "Assets/XAsset/Manifest.asset";
         public static readonly string Extension = ".unity3d";
@@ -55,9 +55,9 @@ namespace XAsset
             Debug.Log(string.Format("{0}{1}", TAG, s));
         }
 
-        internal static AssetMgr Get()
+        internal static XAsset Get()
         {
-            return (AssetMgr)GameServices.Get().Resolve<IAssetManager>(true);
+            return (XAsset)GameServices.Get().Resolve<IAssetManager>(true);
         }
 
         #region API
@@ -638,11 +638,11 @@ namespace XAsset
             }
             init.Release();
 
-            Debug.LogError("all asset path: ");
-            foreach (var path in GetAllAssetPaths())
-            {
-                Debug.LogError("\t" + path);
-            }
+            //Debug.LogError("all asset path: ");
+            //foreach (var path in GetAllAssetPaths())
+            //{
+            //    Debug.LogError("\t" + path);
+            //}
 
             Processor.OnUpdate -= Update;
         }

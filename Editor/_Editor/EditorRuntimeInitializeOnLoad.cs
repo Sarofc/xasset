@@ -36,9 +36,9 @@ namespace XAsset
         [RuntimeInitializeOnLoadMethod]
         private static void OnInitialize()
         {
-            AssetMgr.runtimeMode = BuildScript.GetSettings().runtimeMode;
-            AssetMgr.basePath = BuildScript.outputPath + Path.DirectorySeparatorChar;
-            AssetMgr.loadDelegate = AssetDatabase.LoadAssetAtPath;
+            XAsset.runtimeMode = BuildScript.GetSettings().runtimeMode;
+            XAsset.basePath = BuildScript.outputPath + Path.DirectorySeparatorChar;
+            XAsset.loadDelegate = AssetDatabase.LoadAssetAtPath;
             
             var assets = new List<string>();
             var rules = BuildScript.GetBuildRules();

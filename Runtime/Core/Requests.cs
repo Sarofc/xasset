@@ -88,8 +88,8 @@ namespace XAsset
 
         internal virtual void Load()
         {
-            if (!AssetMgr.runtimeMode && AssetMgr.loadDelegate != null)
-                asset = AssetMgr.loadDelegate(url, assetType);
+            if (!XAsset.runtimeMode && XAsset.loadDelegate != null)
+                asset = XAsset.loadDelegate(url, assetType);
             if (asset == null)
             {
                 error = "error! file not exist:" + url;
@@ -101,7 +101,7 @@ namespace XAsset
             if (asset == null)
                 return;
 
-            if (!AssetMgr.runtimeMode)
+            if (!XAsset.runtimeMode)
             {
                 if (!(asset is GameObject))
                     Resources.UnloadAsset(asset);
@@ -207,10 +207,10 @@ namespace XAsset
         internal override void Load()
         {
             _assetName = Path.GetFileName(url);
-            if (AssetMgr.runtimeMode)
+            if (XAsset.runtimeMode)
             {
                 var assetBundleName = _assetName.Replace(".asset", ".unity3d").ToLower();
-                _request = AssetMgr.Get().LoadBundle(assetBundleName, true);
+                _request = XAsset.Get().LoadBundle(assetBundleName, true);
                 _request.completed = Request_completed;
                 loadState = LoadState.LoadAssetBundle;
             }
@@ -236,7 +236,7 @@ namespace XAsset
                 }
                 else
                 {
-                    AssetMgr.Get().OnLoadManifest(manifest);
+                    XAsset.Get().OnLoadManifest(manifest);
                     _request.assetBundle.Unload(true);
                     _request.assetBundle = null;
                 }
@@ -267,7 +267,32 @@ namespace XAsset
 
         internal override void Load()
         {
-            bundle = AssetMgr.Get().LoadBundle(assetBundleName);
+            // BUG 
+            // 同一帧，先调异步接口，再调用同步接口，同步接口 bundle.assetBundle 报空
+            // （不确定异步加载bundle未完成时的情况）
+            // ----------------------------------------------------------------------
+            // 复现：先异步，再同步，虽然不是同一个资源，但是同一个 bundle
+            // 先同步，再异步 就没有问题
+            ////  async 
+            //var cubeRequest = AssetManager.Get().LoadAssetAsync<UnityEngine.GameObject>("Assets/Res/Prefabs/Bullet/Cube.prefab");
+            //cubeRequest.completed += _ =>
+            //{
+            //    if (!cubeRequest.isError)
+            //    {
+            //        var cubePrefab = cubeRequest.asset as UnityEngine.GameObject;
+            //        UnityEngine.Object.Instantiate(cubePrefab);
+            //    }
+            //};
+            //
+            //// sync
+            //var spherePrefab = AssetManager.Get().LoadAsset<UnityEngine.GameObject>("Assets/Res/Prefabs/Bullet/Sphere.prefab");
+            //if (spherePrefab)
+            //{
+            //    var obj = UnityEngine.Object.Instantiate(spherePrefab);
+            //    obj.transform.position = new UnityEngine.Vector3(1, 0, 0);
+            //}
+            // ----------------------------------------------------------------------
+            bundle = XAsset.Get().LoadBundle(assetBundleName);
             var assetName = Path.GetFileName(url);
             if (bundle == null) Debug.LogError("bundlerequest is null: " + assetBundleName);
             if (bundle.assetBundle == null) Debug.LogError("bundle is null: " + assetBundleName);
@@ -376,7 +401,7 @@ namespace XAsset
 
         internal override void Load()
         {
-            bundle = AssetMgr.Get().LoadBundleAsync(assetBundleName);
+            bundle = XAsset.Get().LoadBundleAsync(assetBundleName);
             loadState = LoadState.LoadAssetBundle;
         }
 
@@ -398,7 +423,7 @@ namespace XAsset
         public SceneAssetRequest(string path, bool addictive)
         {
             url = path;
-            AssetMgr.Get().GetAssetBundleName(path, out assetBundleName);
+            XAsset.Get().GetAssetBundleName(path, out assetBundleName);
             sceneName = Path.GetFileNameWithoutExtension(url);
             loadSceneMode = addictive ? LoadSceneMode.Additive : LoadSceneMode.Single;
         }
@@ -412,7 +437,7 @@ namespace XAsset
         {
             if (!string.IsNullOrEmpty(assetBundleName))
             {
-                bundle = AssetMgr.Get().LoadBundle(assetBundleName);
+                bundle = XAsset.Get().LoadBundle(assetBundleName);
                 if (bundle != null)
                     SceneManager.LoadScene(sceneName, loadSceneMode);
             }
@@ -547,7 +572,7 @@ namespace XAsset
         {
             if (!string.IsNullOrEmpty(assetBundleName))
             {
-                bundle = AssetMgr.Get().LoadBundleAsync(assetBundleName);
+                bundle = XAsset.Get().LoadBundleAsync(assetBundleName);
                 loadState = LoadState.LoadAssetBundle;
             }
             else
