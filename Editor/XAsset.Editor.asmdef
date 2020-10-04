@@ -1,0 +1,19 @@
+{
+    "name": "XAsset.Editor",
+    "references": [
+        "GUID:afbe52a30a9f7e24dadaf1339a63752a",
+        "GUID:48eab5512e6913042b0658c8a2b66574",
+        "GUID:064d5d3dcae27fa40b37584cc9104eac"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

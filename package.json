@@ -1,0 +1,17 @@
+{
+    "name": "com.saro.xasset",
+    "version": "0.0.1",
+    "displayName": "XAsset",
+    "description": "",
+    "unity": "2019.4",
+    "dependencies": {
+        "com.saro.mgf": "https://github.com/Sarofc/MGF.git"
+    },
+    "keywords": [
+        "asset",
+        "build"
+    ],
+    "author": {
+        "name": "saro"
+    }
+}
