@@ -32,7 +32,7 @@ namespace XAsset
             var ret = new List<BuildMethod>();
             var assembly = Assembly.Load("XAsset.Editor");
             var type = assembly.GetType("XAsset.BuildMethods");
-            var methods = type.GetMethods(BindingFlags.Static | BindingFlags.NonPublic);
+            var methods = type.GetMethods(BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public);
             foreach (var method in methods)
             {
                 var attr = method.GetCustomAttribute<BuildMethodAttribute>();

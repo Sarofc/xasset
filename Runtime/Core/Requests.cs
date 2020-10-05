@@ -267,35 +267,12 @@ namespace XAsset
 
         internal override void Load()
         {
-            // BUG 
+            // fix
             // 同一帧，先调异步接口，再调用同步接口，同步接口 bundle.assetBundle 报空
             // （不确定异步加载bundle未完成时的情况）
-            // ----------------------------------------------------------------------
-            // 复现：先异步，再同步，虽然不是同一个资源，但是同一个 bundle
-            // 先同步，再异步 就没有问题
-            ////  async 
-            //var cubeRequest = AssetManager.Get().LoadAssetAsync<UnityEngine.GameObject>("Assets/Res/Prefabs/Bullet/Cube.prefab");
-            //cubeRequest.completed += _ =>
-            //{
-            //    if (!cubeRequest.isError)
-            //    {
-            //        var cubePrefab = cubeRequest.asset as UnityEngine.GameObject;
-            //        UnityEngine.Object.Instantiate(cubePrefab);
-            //    }
-            //};
-            //
-            //// sync
-            //var spherePrefab = AssetManager.Get().LoadAsset<UnityEngine.GameObject>("Assets/Res/Prefabs/Bullet/Sphere.prefab");
-            //if (spherePrefab)
-            //{
-            //    var obj = UnityEngine.Object.Instantiate(spherePrefab);
-            //    obj.transform.position = new UnityEngine.Vector3(1, 0, 0);
-            //}
-            // ----------------------------------------------------------------------
+
             bundle = XAsset.Get().LoadBundle(assetBundleName);
             var assetName = Path.GetFileName(url);
-            if (bundle == null) Debug.LogError("bundlerequest is null: " + assetBundleName);
-            if (bundle.assetBundle == null) Debug.LogError("bundle is null: " + assetBundleName);
             asset = bundle.assetBundle.LoadAsset(assetName, assetType);
         }
 
@@ -688,7 +665,7 @@ namespace XAsset
     {
         public readonly List<BundleRequest> dependencies = new List<BundleRequest>();
 
-        public AssetBundle assetBundle
+        public virtual AssetBundle assetBundle
         {
             get { return asset as AssetBundle; }
             internal set { asset = value; }
@@ -713,6 +690,26 @@ namespace XAsset
     public class BundleAsyncRequest : BundleRequest
     {
         private AssetBundleCreateRequest _request;
+
+        public override AssetBundle assetBundle
+        {
+            get
+            {
+                // fix 
+                // 同一帧，先调异步接口，再调用同步接口，同步接口 bundle.assetBundle 报空
+                if (_request != null && !_request.isDone)
+                {
+                    asset = _request.assetBundle;
+                    //Debug.LogError("bundle async request is not done. asset = " + (asset ? asset.name : "null"));
+                }
+                return base.assetBundle;
+            }
+
+            internal set
+            {
+                base.assetBundle = value;
+            }
+        }
 
         public override bool isDone
         {
