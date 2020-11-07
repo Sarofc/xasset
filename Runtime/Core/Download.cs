@@ -53,7 +53,7 @@ namespace XAsset
 
         public int id { get; set; }
 
-        public string error { get; private set; }
+        public new string error { get; private set; }
 
         public long len { get; set; }
 
@@ -93,9 +93,9 @@ namespace XAsset
             return null;
         }
 
-        protected override void ReceiveContentLength(int contentLength)
-        {
-        }
+        //protected override void ReceiveContentLength(int contentLength)
+        //{
+        //}
 
         protected override bool ReceiveData(byte[] buffer, int dataLength)
         {

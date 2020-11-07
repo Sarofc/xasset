@@ -622,7 +622,7 @@ namespace XAsset
 
         public IEnumerator<IAsyncJobResult> Initialize(ServiceLocator serviceLocator)
         {
-            Processor.OnUpdate += Update;
+            Processor.onUpdate += Update;
 
             var init = Initialize();
 
@@ -644,7 +644,7 @@ namespace XAsset
             //    Debug.LogError("\t" + path);
             //}
 
-            Processor.OnUpdate -= Update;
+            Processor.onUpdate -= Update;
         }
 
         void IHasUpdate.Update()
