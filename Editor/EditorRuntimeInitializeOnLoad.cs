@@ -33,7 +33,7 @@ namespace XAsset
 {
     public class EditorRuntimeInitializeOnLoad
     {
-        [RuntimeInitializeOnLoadMethod]
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterAssembliesLoaded)]
         private static void OnInitialize()
         {
             XAsset.runtimeMode = BuildScript.GetSettings().runtimeMode;

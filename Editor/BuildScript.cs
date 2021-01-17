@@ -234,7 +234,7 @@ namespace XAsset
                 options = EditorUserBuildSettings.development ? BuildOptions.Development : BuildOptions.None
             };
             BuildPipeline.BuildPlayer(buildPlayerOptions);
-            OpenFolder.OpenDirectory(outputPath);
+            OpenFolderUtility.OpenDirectory(outputPath);
         }
 
         public static string CreateAssetBundleDirectory()

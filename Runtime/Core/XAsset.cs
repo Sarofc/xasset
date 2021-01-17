@@ -37,10 +37,11 @@ using Object = UnityEngine.Object;
 using Saro.Core;
 using Saro.Core.Jobs;
 using Saro.Core.Services;
+using Saro;
 
 namespace XAsset
 {
-    public sealed class XAsset : IAssetManager, IService, IHasUpdate
+    public sealed class XAsset : IAssetMgr, IService, IHasUpdate
     {
         public static readonly string ManifestAsset = "Assets/XAsset/Manifest.asset";
         public static readonly string Extension = ".unity3d";
@@ -57,7 +58,7 @@ namespace XAsset
 
         internal static XAsset Get()
         {
-            return (XAsset)GameServices.Get().Resolve<IAssetManager>(true);
+            return (XAsset)MainLocator.Get().Resolve<IAssetMgr>(true);
         }
 
         #region API
