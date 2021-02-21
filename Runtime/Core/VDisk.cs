@@ -118,8 +118,13 @@ namespace XAsset
 
         public bool Load(string path)
         {
+            // issue
+            // android, webgl error
             if (!File.Exists(path))
+            {
+                Debug.LogError("[XAsset] File:Exists() return false.");
                 return false;
+            }
 
             Clear();
 

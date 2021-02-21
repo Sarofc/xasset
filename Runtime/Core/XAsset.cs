@@ -24,11 +24,10 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-#define LOG_ENABLE
+#define DEBUG_XASSET
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
@@ -45,15 +44,14 @@ namespace XAsset
     {
         public static readonly string ManifestAsset = "Assets/XAsset/Manifest.asset";
         public static readonly string Extension = ".unity3d";
-        private const string TAG = "[Assets]";
 
         public static bool runtimeMode = true;
         public static Func<string, Type, Object> loadDelegate = null;
 
-        [Conditional("LOG_ENABLE")]
-        private void Log(string s)
+        [System.Diagnostics.Conditional("DEBUG_XASSET")]
+        private void Log(string msg)
         {
-            Debug.Log(string.Format("{0}{1}", TAG, s));
+            Debug.Log(string.Format("[Assets] {0}", msg));
         }
 
         internal static XAsset Get()
@@ -86,13 +84,6 @@ namespace XAsset
 
         internal ManifestRequest Initialize()
         {
-            //var instance = FindObjectOfType<AssetMgr>();
-            //if (instance == null)
-            //{
-            //    instance = new GameObject("Assets").AddComponent<AssetMgr>();
-            //    DontDestroyOnLoad(instance.gameObject);
-            //}
-
             if (string.IsNullOrEmpty(basePath))
             {
                 basePath = Application.streamingAssetsPath + Path.DirectorySeparatorChar;

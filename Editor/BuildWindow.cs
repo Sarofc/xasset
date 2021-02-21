@@ -191,10 +191,11 @@ namespace XAsset
                 rect1.x = 40f;
                 rect1.width = 300f;
                 EditorGUI.LabelField(rect1, string.Format("[{0:00}] {1}", buildMethod.order, buildMethod.description), buildMethod.required ? s_GUIStyles.style_FontBlodAndItalic : s_GUIStyles.style_FontItalic);
-                rect1.x = rect.width - 80f;
-                rect1.width = 80f;
+                rect1.x = rect.width - 40;
+                rect1.width = 40;
                 rect1.height = EditorGUIUtility.singleLineHeight;
-                if (GUI.Button(rect1, "Execute"))
+
+                if (GUI.Button(rect1, "Run"))
                 {
                     ExecuteAction(() =>
                     {
@@ -235,7 +236,7 @@ namespace XAsset
 
         void EnsureProcedureSettings()
         {
-            m_ProcedureSettings = BuildScript.GetAsset<ProcedureSettings>(ProcedureMgr.s_ProcedureSettingsPath);
+            m_ProcedureSettings = BuildScript.GetAsset<ProcedureSettings>(ProcedureMgr.k_ProcedureSettingsPath);
         }
 
         void ExecuteAction(System.Action action)
