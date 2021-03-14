@@ -140,7 +140,8 @@ namespace XAsset
 
         public static void CopyAssetBundlesTo(string path)
         {
-            var files = new[] {
+            var files = new HashSet<string>
+            {
                 Versions.Dataname,
                 Versions.Filename,
             };
@@ -148,13 +149,33 @@ namespace XAsset
             {
                 Directory.CreateDirectory(path);
             }
-            foreach (var item in files)
+
+            if (GetSettings().enableVFS)
             {
-                var src = outputPath + "/" + item;
-                var dest = Application.streamingAssetsPath + "/" + item;
-                if (File.Exists(src))
+                foreach (var item in files)
                 {
-                    File.Copy(src, dest, true);
+                    var src = outputPath + "/" + item;
+                    var dest = Application.streamingAssetsPath + "/" + item;
+                    if (File.Exists(src))
+                    {
+                        File.Copy(src, dest, true);
+                    }
+                }
+            }
+            else
+            {
+                var _files = Directory.GetFiles(outputPath);
+                foreach (var src in _files)
+                {
+                    var fileName = Path.GetFileName(src);
+
+                    if (files.Contains(fileName)) continue;
+
+                    var dest = Application.streamingAssetsPath /*+ "/" + GetPlatformName()*/ + "/" + fileName;
+                    if (File.Exists(src))
+                    {
+                        File.Copy(src, dest, true);
+                    }
                 }
             }
         }
@@ -332,7 +353,8 @@ namespace XAsset
             BuildPipeline.BuildAssetBundles(outputPath, builds, options, targetPlatform);
             ArrayUtility.Add(ref bundles, manifestBundleName);
 
-            Versions.BuildVersions(outputPath, bundles, GetBuildRules().AddVersion());
+            if (GetSettings().enableVFS)
+                Versions.BuildVersions(outputPath, bundles, GetBuildRules().AddVersion());
         }
 
         private static string GetBuildTargetName(BuildTarget target)

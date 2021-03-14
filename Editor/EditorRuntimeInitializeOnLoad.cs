@@ -37,7 +37,7 @@ namespace XAsset
         private static void OnInitialize()
         {
             XAsset.runtimeMode = BuildScript.GetSettings().runtimeMode;
-            XAsset.basePath = BuildScript.outputPath + Path.DirectorySeparatorChar;
+            //XAsset.basePath = BuildScript.outputPath + Path.DirectorySeparatorChar;
             XAsset.loadDelegate = AssetDatabase.LoadAssetAtPath;
             
             var assets = new List<string>();

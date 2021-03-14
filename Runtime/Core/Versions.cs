@@ -39,8 +39,8 @@ namespace XAsset
 
     public static class Versions
     {
-        public const string Dataname = "res";
-        public const string Filename = "ver";
+        public const string Dataname = "res.bytes";
+        public const string Filename = "ver.bytes";
         public static readonly VerifyBy verifyBy = VerifyBy.Hash;
         private static readonly VDisk _disk = new VDisk();
         private static readonly Dictionary<string, VFile> _updateData = new Dictionary<string, VFile>(StringComparer.Ordinal);

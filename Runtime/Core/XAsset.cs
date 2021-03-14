@@ -24,7 +24,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-#define DEBUG_XASSET
+//#define DEBUG_XASSET
 
 using System;
 using System.Collections.Generic;
@@ -73,9 +73,9 @@ namespace XAsset
             return _assetToBundles;
         }
 
-        public static string basePath { get; set; }
+        public static string basePath { get; internal set; }
 
-        public static string updatePath { get; set; }
+        public static string updatePath { get; internal set; }
 
         public void AddSearchPath(string path)
         {
@@ -97,17 +97,17 @@ namespace XAsset
             var path = string.Format("{0}/{1}", basePath, Versions.Dataname);
 
             Clear();
-
+            
             Log(string.Format(
                 "Initialize with: runtimeMode={0}\nbasePath：{1}\nupdatePath={2}",
                 runtimeMode, basePath, updatePath));
 
             if (runtimeMode)
             {
-                if (!Versions.LoadDisk(path))
-                {
-                    throw new Exception("vfile load failed! path=" + path);
-                }
+                //if (!Versions.LoadDisk(path))
+                //{
+                //    throw new Exception("vfile load failed! path=" + path);
+                //}
             }
 
             var request = new ManifestRequest { url = ManifestAsset };
@@ -341,9 +341,17 @@ namespace XAsset
                     path.StartsWith("file://", StringComparison.Ordinal) ||
                     path.StartsWith("ftp://", StringComparison.Ordinal) ||
                     path.StartsWith("jar:file://", StringComparison.Ordinal))
+                {
                     request = new WebAssetRequest();
+
+                    Log("WebAssetRequest 加载: " + path);
+                }
                 else
+                {
                     request = new AssetRequest();
+
+                    Log("AssetRequest 加载：" + path);
+                }
             }
 
             request.url = path;
