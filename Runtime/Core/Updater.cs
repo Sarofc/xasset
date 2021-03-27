@@ -64,7 +64,7 @@
 
 //        [SerializeField] private string baseURL = "http://127.0.0.1:7888/DLC/";
 //        [SerializeField] private string gameScene = "Game.unity";
-//        [SerializeField] private bool enableVFS = true;
+//        //[SerializeField] private bool enableVFS = true;
 //        [SerializeField] private bool development;
 
 //        public IUpdater listener { get; set; }
@@ -162,7 +162,7 @@
 
 //            if (reachability == NetworkReachability.NotReachable)
 //            {
-//                MessageBox.Show("提示！", "找不到网络，请确保手机已经联网", "确定", "退出").onComplete += delegate(MessageBox.EventId id)
+//                MessageBox.Show("提示！", "找不到网络，请确保手机已经联网", "确定", "退出").onComplete += delegate (MessageBox.EventId id)
 //                {
 //                    if (id == MessageBox.EventId.Ok)
 //                    {
@@ -173,7 +173,7 @@
 //                        else
 //                        {
 //                            StartUpdate();
-//                        } 
+//                        }
 //                        _reachabilityChanged = false;
 //                    }
 //                    else
@@ -191,7 +191,7 @@
 //                else
 //                {
 //                    StartUpdate();
-//                } 
+//                }
 //                _reachabilityChanged = false;
 //                MessageBox.CloseAll();
 //            }
@@ -245,7 +245,7 @@
 //            {
 //                listener.OnStart();
 //            }
-//        } 
+//        }
 
 //        private IEnumerator _checking;
 
@@ -279,17 +279,17 @@
 
 //        private void PrepareDownloads()
 //        {
-//            if (enableVFS)
-//            {
-//                var path = string.Format("{0}{1}", _savePath, Versions.Dataname);
-//                if (!File.Exists(path))
-//                {
-//                    AddDownload(_versions[0]);
-//                    return;
-//                }
+//            //if (enableVFS)
+//            //{
+//            //    var path = string.Format("{0}{1}", _savePath, Versions.Dataname);
+//            //    if (!File.Exists(path))
+//            //    {
+//            //        AddDownload(_versions[0]);
+//            //        return;
+//            //    }
 
-//                Versions.LoadDisk(path);
-//            }
+//            //    Versions.LoadDisk(path);
+//            //}
 
 //            for (var i = 1; i < _versions.Count; i++)
 //            {
@@ -301,16 +301,15 @@
 //            }
 //        }
 
-//        private IEnumerator RequestVFS()
-//        {
-//            var mb = MessageBox.Show("提示", "是否开启VFS？开启有助于提升IO性能和数据安全。", "开启");
-//            yield return mb;
-//            enableVFS = mb.isOk;
-//        }
+//        //private IEnumerator RequestVFS()
+//        //{
+//        //    var mb = MessageBox.Show("提示", "是否开启VFS？开启有助于提升IO性能和数据安全。", "开启");
+//        //    yield return mb;
+//        //    enableVFS = mb.isOk;
+//        //}
 
 //        private static string GetPlatformForAssetBundles(RuntimePlatform target)
 //        {
-//            // ReSharper disable once SwitchStatementMissingSomeCases
 //            switch (target)
 //            {
 //                case RuntimePlatform.Android:
@@ -384,13 +383,13 @@
 //                    else
 //                    {
 //                        Quit();
-//                    } 
+//                    }
 //                }
 //                else
 //                {
 //                    OnComplete();
 //                }
-//            } 
+//            }
 //        }
 
 //        private IEnumerator RequestVersions()
@@ -407,7 +406,7 @@
 //                else
 //                {
 //                    Quit();
-//                } 
+//                }
 //                yield break;
 //            }
 
@@ -427,9 +426,9 @@
 //                else
 //                {
 //                    Quit();
-//                } 
-//                yield break; 
-//            } 
+//                }
+//                yield break;
+//            }
 //            try
 //            {
 //                _versions = Versions.LoadVersions(_savePath + Versions.Filename, true);
@@ -447,7 +446,7 @@
 //            {
 //                Debug.LogException(e);
 //                MessageBox.Show("提示", "版本文件加载失败", "重试", "退出").onComplete +=
-//                    delegate(MessageBox.EventId id)
+//                    delegate (MessageBox.EventId id)
 //                    {
 //                        if (id == MessageBox.EventId.Ok)
 //                        {
@@ -503,7 +502,7 @@
 //            else
 //            {
 //                _step = Step.Versions;
-//            } 
+//            }
 //            request.Dispose();
 //        }
 
@@ -541,33 +540,33 @@
 
 //        private void OnComplete()
 //        {
-//            if (enableVFS)
-//            {
-//                var dataPath = _savePath + Versions.Dataname;
-//                var downloads = _downloader.downloads;
-//                if (downloads.Count > 0 && File.Exists(dataPath))
-//                {
-//                    OnMessage("更新本地版本信息");
-//                    var files = new List<VFile>(downloads.Count);
-//                    foreach (var download in downloads)
-//                    {
-//                        files.Add(new VFile
-//                        {
-//                            name = download.name,
-//                            hash = download.hash,
-//                            len = download.len,
-//                        });
-//                    }
+//            //if (enableVFS)
+//            //{
+//            //    var dataPath = _savePath + Versions.Dataname;
+//            //    var downloads = _downloader.downloads;
+//            //    if (downloads.Count > 0 && File.Exists(dataPath))
+//            //    {
+//            //        OnMessage("更新本地版本信息");
+//            //        var files = new List<VFile>(downloads.Count);
+//            //        foreach (var download in downloads)
+//            //        {
+//            //            files.Add(new VFile
+//            //            {
+//            //                name = download.name,
+//            //                hash = download.hash,
+//            //                len = download.len,
+//            //            });
+//            //        }
 
-//                    var file = files[0];
-//                    if (!file.name.Equals(Versions.Dataname))
-//                    {
-//                        Versions.UpdateDisk(dataPath, files);
-//                    }
-//                }
+//            //        var file = files[0];
+//            //        if (!file.name.Equals(Versions.Dataname))
+//            //        {
+//            //            Versions.UpdateDisk(dataPath, files);
+//            //        }
+//            //    }
 
-//                Versions.LoadDisk(dataPath);
-//            }
+//            //    Versions.LoadDisk(dataPath);
+//            //}
 
 //            OnProgress(1);
 //            OnMessage("更新完成");
@@ -582,29 +581,31 @@
 
 //        private IEnumerator LoadGameScene()
 //        {
-//            OnMessage("正在初始化");
-//            var init = AssetMgr.Initialize();
-//            yield return init;
-//            if (string.IsNullOrEmpty(init.error))
-//            {
-//                AssetMgr.AddSearchPath("Assets/XAsset/Demo/Scenes");
-//                init.Release();
-//                OnProgress(0);
-//                OnMessage("加载游戏场景");
-//                var scene = AssetMgr.LoadSceneAsync(gameScene, false);
-//                while (!scene.isDone)
-//                {
-//                    OnProgress(scene.progress);
-//                    yield return null;
-//                }
-//            }
-//            else
-//            {
-//                init.Release();
-//                var mb = MessageBox.Show("提示", "初始化异常错误：" + init.error + "请联系技术支持");
-//                yield return mb;
-//                Quit();
-//            }
+//            yield break;
+
+//            //OnMessage("正在初始化");
+//            //var init = AssetMgr.Initialize();
+//            //yield return init;
+//            //if (string.IsNullOrEmpty(init.error))
+//            //{
+//            //    AssetMgr.AddSearchPath("Assets/XAsset/Demo/Scenes");
+//            //    init.Release();
+//            //    OnProgress(0);
+//            //    OnMessage("加载游戏场景");
+//            //    var scene = AssetMgr.LoadSceneAsync(gameScene, false);
+//            //    while (!scene.isDone)
+//            //    {
+//            //        OnProgress(scene.progress);
+//            //        yield return null;
+//            //    }
+//            //}
+//            //else
+//            //{
+//            //    init.Release();
+//            //    var mb = MessageBox.Show("提示", "初始化异常错误：" + init.error + "请联系技术支持");
+//            //    yield return mb;
+//            //    Quit();
+//            //}
 //        }
 
 //        private void OnDestroy()
