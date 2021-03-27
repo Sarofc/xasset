@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using Saro.Core;
 
-namespace XAsset
+namespace Saro.XAsset
 {
     public class BuildWindow : EditorWindow
     {

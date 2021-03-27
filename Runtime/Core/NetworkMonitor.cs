@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace XAsset
+namespace Saro.XAsset
 {
     public interface INetworkMonitorListener
     {

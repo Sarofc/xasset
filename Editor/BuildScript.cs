@@ -31,7 +31,7 @@ using System.Linq;
 using UnityEditor;
 using UnityEngine;
 
-namespace XAsset
+namespace Saro.XAsset
 {
     public static class BuildScript
     {
@@ -150,19 +150,19 @@ namespace XAsset
                 Directory.CreateDirectory(path);
             }
 
-            if (GetSettings().enableVFS)
-            {
-                foreach (var item in files)
-                {
-                    var src = outputPath + "/" + item;
-                    var dest = Application.streamingAssetsPath + "/" + item;
-                    if (File.Exists(src))
-                    {
-                        File.Copy(src, dest, true);
-                    }
-                }
-            }
-            else
+            //if (GetSettings().enableVFS)
+            //{
+            //    foreach (var item in files)
+            //    {
+            //        var src = outputPath + "/" + item;
+            //        var dest = Application.streamingAssetsPath + "/" + item;
+            //        if (File.Exists(src))
+            //        {
+            //            File.Copy(src, dest, true);
+            //        }
+            //    }
+            //}
+            //else
             {
                 var _files = Directory.GetFiles(outputPath);
                 foreach (var src in _files)
@@ -353,8 +353,8 @@ namespace XAsset
             BuildPipeline.BuildAssetBundles(outputPath, builds, options, targetPlatform);
             ArrayUtility.Add(ref bundles, manifestBundleName);
 
-            if (GetSettings().enableVFS)
-                Versions.BuildVersions(outputPath, bundles, GetBuildRules().AddVersion());
+            //if (GetSettings().enableVFS)
+            //    Versions.BuildVersions(outputPath, bundles, GetBuildRules().AddVersion());
         }
 
         private static string GetBuildTargetName(BuildTarget target)

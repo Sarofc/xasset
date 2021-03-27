@@ -26,7 +26,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace XAsset
+namespace Saro.XAsset
 {  
 	public class Reference
 	{

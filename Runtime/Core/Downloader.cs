@@ -29,7 +29,7 @@ using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 
-namespace XAsset
+namespace Saro.XAsset
 {
     public class Downloader : MonoBehaviour
     {

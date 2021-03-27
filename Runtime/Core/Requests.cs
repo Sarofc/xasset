@@ -36,7 +36,7 @@ using UnityEngine.SceneManagement;
 using Debug = UnityEngine.Debug;
 using Object = UnityEngine.Object;
 
-namespace XAsset
+namespace Saro.XAsset
 {
     public enum LoadState
     {
@@ -673,7 +673,9 @@ namespace XAsset
 
         internal override void Load()
         {
-            asset = Versions.LoadAssetBundleFromFile(url);
+            //asset = Versions.LoadAssetBundleFromFile(url);
+            asset = AssetBundle.LoadFromFile(url);
+
             if (assetBundle == null)
                 error = url + " LoadFromFile failed.";
         }
@@ -743,7 +745,9 @@ namespace XAsset
 
         internal override void Load()
         {
-            _request = Versions.LoadAssetBundleFromFileAsync(url);
+            //_request = Versions.LoadAssetBundleFromFileAsync(url);
+            _request = AssetBundle.LoadFromFileAsync(url);
+
             if (_request == null)
             {
                 error = url + " LoadFromFile failed.";

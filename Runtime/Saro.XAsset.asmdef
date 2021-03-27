@@ -1,15 +1,14 @@
 {
-    "name": "XAsset",
+    "name": "Saro.XAsset",
     "references": [
-        "GUID:064d5d3dcae27fa40b37584cc9104eac"
+        "Saro.MGF"
     ],
+    "optionalUnityReferences": [],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": false,
     "precompiledReferences": [],
     "autoReferenced": true,
-    "defineConstraints": [],
-    "versionDefines": [],
-    "noEngineReferences": false
+    "defineConstraints": []
 }

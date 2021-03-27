@@ -2,7 +2,7 @@
 using UnityEditor;
 using System;
 
-namespace XAsset
+namespace Saro.XAsset
 {
 
     [CustomEditor(typeof(XAssetSettings))]

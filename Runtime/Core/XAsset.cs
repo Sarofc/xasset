@@ -38,7 +38,7 @@ using Saro.Core.Jobs;
 using Saro.Core.Services;
 using Saro;
 
-namespace XAsset
+namespace Saro.XAsset
 {
     public sealed class XAsset : IAssetMgr, IService, IHasUpdate
     {
@@ -97,18 +97,18 @@ namespace XAsset
             var path = string.Format("{0}/{1}", basePath, Versions.Dataname);
 
             Clear();
-            
+
             Log(string.Format(
                 "Initialize with: runtimeMode={0}\nbasePath：{1}\nupdatePath={2}",
                 runtimeMode, basePath, updatePath));
 
-            if (runtimeMode)
-            {
-                //if (!Versions.LoadDisk(path))
-                //{
-                //    throw new Exception("vfile load failed! path=" + path);
-                //}
-            }
+            //if (runtimeMode)
+            //{
+            //    if (!Versions.LoadDisk(path))
+            //    {
+            //        throw new Exception("vfile load failed! path=" + path);
+            //    }
+            //}
 
             var request = new ManifestRequest { url = ManifestAsset };
             AddAssetRequest(request);

@@ -31,7 +31,7 @@
 //using UnityEngine;
 //using UnityEngine.Networking;
 
-//namespace XAsset
+//namespace Saro.XAsset
 //{
 //    public interface IUpdater
 //    {

@@ -29,11 +29,15 @@ using System.IO;
 using UnityEditor;
 using UnityEngine;
 
-namespace XAsset
+namespace Saro.XAsset
 {
     public class EditorRuntimeInitializeOnLoad
     {
+#if UNITY_2019_1_OR_NEWER
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterAssembliesLoaded)]
+#else
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+#endif
         private static void OnInitialize()
         {
             XAsset.runtimeMode = BuildScript.GetSettings().runtimeMode;
@@ -65,12 +69,6 @@ namespace XAsset
                 scenes[index] = new EditorBuildSettingsScene(asset, true);
             }
             EditorBuildSettings.scenes = scenes;
-        }
-
-        [InitializeOnLoadMethod]
-        private static void OnEditorInitialize()
-        {
-            EditorUtility.ClearProgressBar();
         }
     }
 }

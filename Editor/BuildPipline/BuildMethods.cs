@@ -32,7 +32,7 @@ using UnityEditor;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
 
-namespace XAsset
+namespace Saro.XAsset
 {
     public static partial class BuildMethods
     {

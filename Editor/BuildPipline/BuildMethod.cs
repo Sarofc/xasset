@@ -4,7 +4,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace XAsset
+namespace Saro.XAsset
 {
     public class BuildMethod
     {
@@ -30,8 +30,8 @@ namespace XAsset
         private static List<BuildMethod> GetBuildMethods()
         {
             var ret = new List<BuildMethod>();
-            var assembly = Assembly.Load("XAsset.Editor");
-            var type = assembly.GetType("XAsset.BuildMethods");
+            var assembly = Assembly.Load("Saro.XAsset.Editor");
+            var type = assembly.GetType("Saro.XAsset.BuildMethods");
             var methods = type.GetMethods(BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public);
             foreach (var method in methods)
             {

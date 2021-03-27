@@ -32,7 +32,7 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.Serialization;
 
-namespace XAsset
+namespace Saro.XAsset
 {
     public enum NameBy
     {

@@ -27,7 +27,7 @@
 using System;
 using UnityEngine;
 
-namespace XAsset
+namespace Saro.XAsset
 {
     [Serializable]
     public class AssetRef

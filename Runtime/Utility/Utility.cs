@@ -4,7 +4,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.IO;
 
-namespace XAsset
+namespace Saro.XAsset
 {
     public static class Utility
     {

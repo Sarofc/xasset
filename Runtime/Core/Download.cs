@@ -29,7 +29,7 @@ using System.IO;
 using UnityEngine;
 using UnityEngine.Networking;
 
-namespace XAsset
+namespace Saro.XAsset
 {
     public class Download : DownloadHandlerScript, IDisposable, ICloneable
     {
