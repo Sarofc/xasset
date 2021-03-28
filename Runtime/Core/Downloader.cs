@@ -34,9 +34,9 @@ namespace Saro.XAsset
     public class Downloader : MonoBehaviour
     {
         private const float BYTES_2_MB = 1f / (1024 * 1024);
-        
+
         public int maxDownloads = 3;
-        
+
         private readonly List<Download> _downloads = new List<Download>();
         private readonly List<Download> _tostart = new List<Download>();
         private readonly List<Download> _progressing = new List<Download>();
@@ -63,19 +63,19 @@ namespace Saro.XAsset
             var downloadSize = 0L;
             foreach (var download in _downloads)
             {
-                downloadSize += download.position;
-                len += download.len;
-            } 
+                downloadSize += download.Position;
+                len += download.Len;
+            }
             return downloadSize - (len - size);
         }
 
         private bool _started;
-        [SerializeField]private float sampleTime = 0.5f;
+        [SerializeField] private float sampleTime = 0.5f;
 
         public void StartDownload()
         {
-            _tostart.Clear(); 
-            _finishedIndex = 0; 
+            _tostart.Clear();
+            _finishedIndex = 0;
             _lastSize = 0L;
             Restart();
         }
@@ -100,10 +100,10 @@ namespace Saro.XAsset
             _tostart.Clear();
             foreach (var download in _progressing)
             {
-                download.Complete(true); 
-                _downloads[download.id] = download.Clone() as Download;
+                download.Complete(true);
+                _downloads[download.Id] = download.Clone() as Download;
 
-            } 
+            }
             _progressing.Clear();
             _started = false;
         }
@@ -112,13 +112,13 @@ namespace Saro.XAsset
         {
             size = 0;
             position = 0;
-            
+
             _downloadIndex = 0;
             _finishedIndex = 0;
             _lastTime = 0f;
             _lastSize = 0L;
             _startTime = 0;
-            _started = false; 
+            _started = false;
             foreach (var item in _progressing)
             {
                 item.Complete(true);
@@ -132,23 +132,23 @@ namespace Saro.XAsset
         {
             var download = new Download
             {
-                id = _downloads.Count,
-                url = url,
-                name = filename,
-                hash = hash,
-                len = len,
+                Id = _downloads.Count,
+                Url = url,
+                Name = filename,
+                Hash = hash,
+                Len = len,
                 savePath = savePath,
-                completed = OnFinished
+                Completed = OnFinished
             };
             _downloads.Add(download);
-            var info = new FileInfo(download.tempPath);
+            var info = new FileInfo(download.TempPath);
             if (info.Exists)
             {
-                size += len - info.Length; 
+                size += len - info.Length;
             }
             else
             {
-                size += len; 
+                size += len;
             }
         }
 
@@ -157,16 +157,16 @@ namespace Saro.XAsset
             if (_downloadIndex < _downloads.Count)
             {
                 _tostart.Add(_downloads[_downloadIndex]);
-                _downloadIndex++;    
-            } 
+                _downloadIndex++;
+            }
             _finishedIndex++;
             Debug.Log(string.Format("OnFinished:{0}, {1}", _finishedIndex, _downloads.Count));
             if (_finishedIndex != downloads.Count)
                 return;
             if (onFinished != null)
             {
-                onFinished.Invoke(); 
-            } 
+                onFinished.Invoke();
+            }
             _started = false;
         }
 
@@ -200,8 +200,8 @@ namespace Saro.XAsset
         private void Update()
         {
             if (!_started)
-                return; 
-            
+                return;
+
             if (_tostart.Count > 0)
             {
                 for (var i = 0; i < Math.Min(maxDownloads, _tostart.Count); i++)
@@ -218,26 +218,26 @@ namespace Saro.XAsset
             {
                 var download = _progressing[index];
                 download.Update();
-                if (!download.finished)
+                if (!download.Finished)
                     continue;
                 _progressing.RemoveAt(index);
                 index--;
             }
 
-            position = GetDownloadSize(); 
-            
+            position = GetDownloadSize();
+
             var elapsed = Time.realtimeSinceStartup - _startTime;
             if (elapsed - _lastTime < sampleTime)
                 return;
-            
-            var deltaTime = elapsed - _lastTime; 
+
+            var deltaTime = elapsed - _lastTime;
             speed = (position - _lastSize) / deltaTime;
             if (onUpdate != null)
             {
                 onUpdate(position, size, speed);
             }
-            
-            _lastTime = elapsed;  
+
+            _lastTime = elapsed;
             _lastSize = position;
         }
     }

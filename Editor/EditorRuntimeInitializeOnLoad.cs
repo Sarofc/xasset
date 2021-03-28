@@ -40,12 +40,12 @@ namespace Saro.XAsset
 #endif
         private static void OnInitialize()
         {
-            XAsset.runtimeMode = BuildScript.GetSettings().runtimeMode;
+            XAsset.s_RuntimeMode = BuildScript.GetXAssetSettings().runtimeMode;
             //XAsset.basePath = BuildScript.outputPath + Path.DirectorySeparatorChar;
-            XAsset.loadDelegate = AssetDatabase.LoadAssetAtPath;
+            XAsset.s_EditorLoader = AssetDatabase.LoadAssetAtPath;
             
             var assets = new List<string>();
-            var rules = BuildScript.GetBuildRules();
+            var rules = BuildScript.GetXAssetBuildRules();
             foreach (var asset in rules.scenesInBuild)
             {
                 var path = AssetDatabase.GetAssetPath(asset);

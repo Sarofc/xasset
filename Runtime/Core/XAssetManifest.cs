@@ -47,7 +47,7 @@ namespace Saro.XAsset
         public string hash;
     }
 
-    public class Manifest : ScriptableObject
+    public class XAssetManifest : ScriptableObject
     {
         public string[] activeVariants = new string[0];
         public string[] dirs = new string[0];

@@ -1,29 +1,3 @@
-//
-// Versions.cs
-//
-// Author:
-//       fjy <jiyuan.feng@live.com>
-//
-// Copyright (c) 2020 fjy
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-// THE SOFTWARE.
-
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -80,47 +54,47 @@ namespace Saro.XAsset
         //    return AssetBundle.LoadFromFileAsync(url);
         //}
 
-        //public static void BuildVersions(string outputPath, string[] bundles, int version)
-        //{
-        //    var path = outputPath + "/" + Filename;
-        //    if (File.Exists(path))
-        //    {
-        //        File.Delete(path);
-        //    }
-        //    var dataPath = outputPath + "/" + Dataname;
-        //    if (File.Exists(dataPath))
-        //    {
-        //        File.Delete(dataPath);
-        //    }
+        public static void BuildVersions(string outputPath, string[] bundles, int version)
+        {
+            var path = outputPath + "/" + Filename;
+            if (File.Exists(path))
+            {
+                File.Delete(path);
+            }
+            var dataPath = outputPath + "/" + Dataname;
+            if (File.Exists(dataPath))
+            {
+                File.Delete(dataPath);
+            }
 
-        //    var disk = new VDisk();
-        //    foreach (var file in bundles)
-        //    {
-        //        using (var fs = File.OpenRead(outputPath + "/" + file))
-        //        {
-        //            disk.AddFile(file, fs.Length, Utility.GetCRC32Hash(fs));
-        //        }
-        //    }
+            var disk = new VDisk();
+            foreach (var file in bundles)
+            {
+                using (var fs = File.OpenRead(outputPath + "/" + file))
+                {
+                    disk.AddFile(file, fs.Length, Utility.GetCRC32Hash(fs));
+                }
+            }
 
-        //    disk.name = dataPath;
-        //    disk.Save();
+            disk.name = dataPath;
+            disk.Save();
 
-        //    using (var stream = File.OpenWrite(path))
-        //    {
-        //        var writer = new BinaryWriter(stream);
-        //        writer.Write(version);
-        //        writer.Write(disk.files.Count + 1);
-        //        using (var fs = File.OpenRead(dataPath))
-        //        {
-        //            var file = new VFile { name = Dataname, len = fs.Length, hash = Utility.GetCRC32Hash(fs) };
-        //            file.Serialize(writer);
-        //        }
-        //        foreach (var file in disk.files)
-        //        {
-        //            file.Serialize(writer);
-        //        }
-        //    }
-        //}
+            using (var stream = File.OpenWrite(path))
+            {
+                var writer = new BinaryWriter(stream);
+                writer.Write(version);
+                writer.Write(disk.files.Count + 1);
+                using (var fs = File.OpenRead(dataPath))
+                {
+                    var file = new VFile { Name = Dataname, Len = fs.Length, Hash = Utility.GetCRC32Hash(fs) };
+                    file.Serialize(writer);
+                }
+                foreach (var file in disk.files)
+                {
+                    file.Serialize(writer);
+                }
+            }
+        }
 
         public static int LoadVersion(string filename)
         {
@@ -158,8 +132,8 @@ namespace Saro.XAsset
                     var version = new VFile();
                     version.Deserialize(reader);
                     list.Add(version);
-                    data[version.name] = version;
-                    var dir = string.Format("{0}/{1}", rootDir, Path.GetDirectoryName(version.name));
+                    data[version.Name] = version;
+                    var dir = string.Format("{0}/{1}", rootDir, Path.GetDirectoryName(version.Name));
                     if (!Directory.Exists(dir))
                     {
                         Directory.CreateDirectory(dir);
@@ -195,7 +169,7 @@ namespace Saro.XAsset
             if (_baseData.TryGetValue(key, out file))
             {
                 if (key.Equals(Dataname) ||
-                    file.len == len && file.hash.Equals(hash, StringComparison.OrdinalIgnoreCase))
+                    file.Len == len && file.Hash.Equals(hash, StringComparison.OrdinalIgnoreCase))
                 {
                     return false;
                 }

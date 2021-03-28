@@ -1,30 +1,4 @@
-﻿//
-// Assets.cs
-//
-// Author:
-//       fjy <jiyuan.feng@live.com>
-//
-// Copyright (c) 2020 fjy
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-// THE SOFTWARE.
-
-//#define DEBUG_XASSET
+﻿//#define DEBUG_XASSET
 
 using System;
 using System.Collections.Generic;
@@ -40,18 +14,18 @@ using Saro;
 
 namespace Saro.XAsset
 {
-    public sealed class XAsset : IAssetMgr, IService, IHasUpdate
+    public sealed class XAsset : IAssetMgr
     {
-        public static readonly string ManifestAsset = "Assets/XAsset/Manifest.asset";
-        public static readonly string Extension = ".unity3d";
+        public const string k_XAssetManifestAsset = "Assets/XAsset/XAssetManifest.asset";
+        public const string k_AssetExtension = ".unity3d";
 
-        public static bool runtimeMode = true;
-        public static Func<string, Type, Object> loadDelegate = null;
+        public static bool s_RuntimeMode = true;
+        public static Func<string, Type, Object> s_EditorLoader = null;
 
         [System.Diagnostics.Conditional("DEBUG_XASSET")]
-        private void Log(string msg)
+        private void INFO(string msg)
         {
-            Debug.Log(string.Format("[Assets] {0}", msg));
+            Log.INFO("XAsset", msg);
         }
 
         internal static XAsset Get()
@@ -70,37 +44,37 @@ namespace Saro.XAsset
             //var assets = new List<string>();
             //assets.AddRange(_assetToBundles.Keys);
             //return assets.ToArray();
-            return _assetToBundles;
+            return m_AssetToBundles;
         }
 
-        public static string basePath { get; internal set; }
+        public static string s_BasePath { get; internal set; }
 
-        public static string updatePath { get; internal set; }
+        public static string s_UpdatePath { get; internal set; }
 
         public void AddSearchPath(string path)
         {
-            _searchPaths.Add(path);
+            m_SearchPaths.Add(path);
         }
 
         internal ManifestRequest Initialize()
         {
-            if (string.IsNullOrEmpty(basePath))
+            if (string.IsNullOrEmpty(s_BasePath))
             {
-                basePath = Application.streamingAssetsPath + Path.DirectorySeparatorChar;
+                s_BasePath = Application.streamingAssetsPath + Path.DirectorySeparatorChar;
             }
 
-            if (string.IsNullOrEmpty(updatePath))
+            if (string.IsNullOrEmpty(s_UpdatePath))
             {
-                updatePath = Application.persistentDataPath + Path.DirectorySeparatorChar;
+                s_UpdatePath = Application.persistentDataPath + Path.DirectorySeparatorChar;
             }
 
-            var path = string.Format("{0}/{1}", basePath, Versions.Dataname);
+            //var path = string.Format("{0}/{1}", s_BasePath, Versions.Dataname);
 
             Clear();
 
-            Log(string.Format(
+            INFO(string.Format(
                 "Initialize with: runtimeMode={0}\nbasePath：{1}\nupdatePath={2}",
-                runtimeMode, basePath, updatePath));
+                s_RuntimeMode, s_BasePath, s_UpdatePath));
 
             //if (runtimeMode)
             //{
@@ -110,7 +84,7 @@ namespace Saro.XAsset
             //    }
             //}
 
-            var request = new ManifestRequest { url = ManifestAsset };
+            var request = new ManifestRequest { Url = k_XAssetManifestAsset };
             AddAssetRequest(request);
             return request;
         }
@@ -127,10 +101,10 @@ namespace Saro.XAsset
             UpdateAssets();
             UpdateBundles();
 
-            _searchPaths.Clear();
-            _activeVariants.Clear();
-            _assetToBundles.Clear();
-            _bundleToDependencies.Clear();
+            m_SearchPaths.Clear();
+            m_ActiveVariants.Clear();
+            m_AssetToBundles.Clear();
+            m_BundleToDependencies.Clear();
         }
 
         private SceneAssetRequest _runningScene;
@@ -156,17 +130,17 @@ namespace Saro.XAsset
             }
             asset.Load();
             asset.Retain();
-            _scenes.Add(asset);
-            Log(string.Format("LoadScene:{0}", path));
+            m_Scenes.Add(asset);
+            INFO(string.Format("LoadScene:{0}", path));
             return asset;
         }
 
         public T LoadAsset<T>(string path) where T : Object
         {
             var asset = LoadAsset(path, typeof(T));
-            if (asset != null && asset.asset != null)
+            if (asset != null && asset.Asset != null)
             {
-                return asset.asset as T;
+                return asset.Asset as T;
             }
 
             return null;
@@ -194,27 +168,27 @@ namespace Saro.XAsset
 
         public void RemoveUnusedAssets()
         {
-            foreach (var item in _assets)
+            foreach (var item in m_Assets)
             {
                 if (item.Value.IsUnused())
                 {
-                    _unusedAssets.Add(item.Value);
+                    m_UnusedAssets.Add(item.Value);
                 }
             }
-            foreach (var request in _unusedAssets)
+            foreach (var request in m_UnusedAssets)
             {
-                _assets.Remove(request.url);
+                m_Assets.Remove(request.Url);
             }
-            foreach (var item in _bundles)
+            foreach (var item in m_Bundles)
             {
                 if (item.Value.IsUnused())
                 {
-                    _unusedBundles.Add(item.Value);
+                    m_UnusedBundles.Add(item.Value);
                 }
             }
-            foreach (var request in _unusedBundles)
+            foreach (var request in m_UnusedBundles)
             {
-                _bundles.Remove(request.url);
+                m_Bundles.Remove(request.Url);
             }
         }
 
@@ -222,9 +196,9 @@ namespace Saro.XAsset
 
         #region Private
 
-        internal void OnLoadManifest(Manifest manifest)
+        internal void OnLoadManifest(XAssetManifest manifest)
         {
-            _activeVariants.AddRange(manifest.activeVariants);
+            m_ActiveVariants.AddRange(manifest.activeVariants);
 
             var assets = manifest.assets;
             var dirs = manifest.dirs;
@@ -232,7 +206,7 @@ namespace Saro.XAsset
 
             foreach (var item in bundles)
             {
-                _bundleToDependencies[item.name] = Array.ConvertAll(item.deps, id => bundles[id].name);
+                m_BundleToDependencies[item.name] = Array.ConvertAll(item.deps, id => bundles[id].name);
                 //Log(item.name);
             }
 
@@ -241,7 +215,7 @@ namespace Saro.XAsset
                 var path = string.Format("{0}/{1}", dirs[item.dir], item.name);
                 if (item.bundle >= 0 && item.bundle < bundles.Length)
                 {
-                    _assetToBundles[path] = bundles[item.bundle].name;
+                    m_AssetToBundles[path] = bundles[item.bundle].name;
                 }
                 else
                 {
@@ -250,13 +224,13 @@ namespace Saro.XAsset
             }
         }
 
-        private static Dictionary<string, AssetRequest> _assets = new Dictionary<string, AssetRequest>(StringComparer.Ordinal);
+        private Dictionary<string, AssetRequest> m_Assets = new Dictionary<string, AssetRequest>(StringComparer.Ordinal);
 
-        private static List<AssetRequest> _loadingAssets = new List<AssetRequest>();
+        private List<AssetRequest> m_LoadingAssets = new List<AssetRequest>();
 
-        private static List<SceneAssetRequest> _scenes = new List<SceneAssetRequest>();
+        private List<SceneAssetRequest> m_Scenes = new List<SceneAssetRequest>();
 
-        private static List<AssetRequest> _unusedAssets = new List<AssetRequest>();
+        private List<AssetRequest> m_UnusedAssets = new List<AssetRequest>();
 
         private void Update()
         {
@@ -266,35 +240,35 @@ namespace Saro.XAsset
 
         private void UpdateAssets()
         {
-            for (var i = 0; i < _loadingAssets.Count; ++i)
+            for (var i = 0; i < m_LoadingAssets.Count; ++i)
             {
-                var request = _loadingAssets[i];
+                var request = m_LoadingAssets[i];
                 if (request.Update())
                     continue;
-                _loadingAssets.RemoveAt(i);
+                m_LoadingAssets.RemoveAt(i);
                 --i;
             }
 
-            if (_unusedAssets.Count > 0)
+            if (m_UnusedAssets.Count > 0)
             {
-                for (var i = 0; i < _unusedAssets.Count; ++i)
+                for (var i = 0; i < m_UnusedAssets.Count; ++i)
                 {
-                    var request = _unusedAssets[i];
-                    if (!request.isDone) continue;
-                    Log(string.Format("UnloadAsset:{0}", request.url));
+                    var request = m_UnusedAssets[i];
+                    if (!request.IsDone) continue;
+                    INFO(string.Format("UnloadAsset:{0}", request.Url));
                     request.Unload();
-                    _unusedAssets.RemoveAt(i);
+                    m_UnusedAssets.RemoveAt(i);
                     i--;
                 }
             }
 
-            for (var i = 0; i < _scenes.Count; ++i)
+            for (var i = 0; i < m_Scenes.Count; ++i)
             {
-                var request = _scenes[i];
+                var request = m_Scenes[i];
                 if (request.Update() || !request.IsUnused())
                     continue;
-                _scenes.RemoveAt(i);
-                Log(string.Format("UnloadScene:{0}", request.url));
+                m_Scenes.RemoveAt(i);
+                INFO(string.Format("UnloadScene:{0}", request.Url));
                 request.Unload();
                 RemoveUnusedAssets();
                 --i;
@@ -303,8 +277,8 @@ namespace Saro.XAsset
 
         private void AddAssetRequest(AssetRequest request)
         {
-            _assets.Add(request.url, request);
-            _loadingAssets.Add(request);
+            m_Assets.Add(request.Url, request);
+            m_LoadingAssets.Add(request);
             request.Load();
         }
 
@@ -319,11 +293,11 @@ namespace Saro.XAsset
             path = GetExistPath(path);
 
             AssetRequest request;
-            if (_assets.TryGetValue(path, out request))
+            if (m_Assets.TryGetValue(path, out request))
             {
                 request.Update();
                 request.Retain();
-                _loadingAssets.Add(request);
+                m_LoadingAssets.Add(request);
                 return request;
             }
 
@@ -344,21 +318,21 @@ namespace Saro.XAsset
                 {
                     request = new WebAssetRequest();
 
-                    Log("WebAssetRequest 加载: " + path);
+                    INFO("WebAssetRequest 加载: " + path);
                 }
                 else
                 {
                     request = new AssetRequest();
 
-                    Log("AssetRequest 加载：" + path);
+                    INFO("AssetRequest 加载：" + path);
                 }
             }
 
-            request.url = path;
-            request.assetType = type;
+            request.Url = path;
+            request.AssetType = type;
             AddAssetRequest(request);
             request.Retain();
-            Log(string.Format("LoadAsset:{0}", path));
+            INFO(string.Format("LoadAsset:{0}", path));
             return request;
         }
 
@@ -366,17 +340,17 @@ namespace Saro.XAsset
 
         #region Paths
 
-        private List<string> _searchPaths = new List<string>();
+        private List<string> m_SearchPaths = new List<string>();
 
         private string GetExistPath(string path)
         {
 #if UNITY_EDITOR
-            if (!runtimeMode)
+            if (!s_RuntimeMode)
             {
                 if (File.Exists(path))
                     return path;
 
-                foreach (var item in _searchPaths)
+                foreach (var item in m_SearchPaths)
                 {
                     var existPath = string.Format("{0}/{1}", item, path);
                     if (File.Exists(existPath))
@@ -387,13 +361,13 @@ namespace Saro.XAsset
                 return path;
             }
 #endif
-            if (_assetToBundles.ContainsKey(path))
+            if (m_AssetToBundles.ContainsKey(path))
                 return path;
 
-            foreach (var item in _searchPaths)
+            foreach (var item in m_SearchPaths)
             {
                 var existPath = string.Format("{0}/{1}", item, path);
-                if (_assetToBundles.ContainsKey(existPath))
+                if (m_AssetToBundles.ContainsKey(existPath))
                     return existPath;
             }
 
@@ -405,31 +379,31 @@ namespace Saro.XAsset
 
         #region Bundles
 
-        private static readonly int MAX_BUNDLES_PERFRAME = 0;
+        private const int k_MAX_BUNDLES_PERFRAME = 0;
 
-        private Dictionary<string, BundleRequest> _bundles = new Dictionary<string, BundleRequest>(StringComparer.Ordinal);
+        private Dictionary<string, BundleRequest> m_Bundles = new Dictionary<string, BundleRequest>(StringComparer.Ordinal);
 
-        private List<BundleRequest> _loadingBundles = new List<BundleRequest>();
+        private List<BundleRequest> m_LoadingBundles = new List<BundleRequest>();
 
-        private List<BundleRequest> _unusedBundles = new List<BundleRequest>();
+        private List<BundleRequest> m_UnusedBundles = new List<BundleRequest>();
 
-        private List<BundleRequest> _toloadBundles = new List<BundleRequest>();
+        private List<BundleRequest> m_ToloadBundles = new List<BundleRequest>();
 
-        private List<string> _activeVariants = new List<string>();
+        private List<string> m_ActiveVariants = new List<string>();
 
-        private Dictionary<string, string> _assetToBundles = new Dictionary<string, string>(StringComparer.Ordinal);
+        private Dictionary<string, string> m_AssetToBundles = new Dictionary<string, string>(StringComparer.Ordinal);
 
-        private Dictionary<string, string[]> _bundleToDependencies = new Dictionary<string, string[]>(StringComparer.Ordinal);
+        private Dictionary<string, string[]> m_BundleToDependencies = new Dictionary<string, string[]>(StringComparer.Ordinal);
 
         internal bool GetAssetBundleName(string path, out string assetBundleName)
         {
-            return _assetToBundles.TryGetValue(path, out assetBundleName);
+            return m_AssetToBundles.TryGetValue(path, out assetBundleName);
         }
 
         private string[] GetAllDependencies(string bundle)
         {
             string[] deps;
-            if (_bundleToDependencies.TryGetValue(bundle, out deps))
+            if (m_BundleToDependencies.TryGetValue(bundle, out deps))
                 return deps;
 
             return new string[0];
@@ -452,13 +426,13 @@ namespace Saro.XAsset
 
         private void UnloadDependencies(BundleRequest bundle)
         {
-            for (var i = 0; i < bundle.dependencies.Count; i++)
+            for (var i = 0; i < bundle.Dependencies.Count; i++)
             {
-                var item = bundle.dependencies[i];
+                var item = bundle.Dependencies[i];
                 item.Release();
             }
 
-            bundle.dependencies.Clear();
+            bundle.Dependencies.Clear();
         }
 
         private void LoadDependencies(BundleRequest bundle, string assetBundleName, bool asyncRequest)
@@ -469,7 +443,7 @@ namespace Saro.XAsset
             for (var i = 0; i < dependencies.Length; i++)
             {
                 var item = dependencies[i];
-                bundle.dependencies.Add(LoadBundle(item, asyncRequest));
+                bundle.Dependencies.Add(LoadBundle(item, asyncRequest));
             }
         }
 
@@ -486,11 +460,11 @@ namespace Saro.XAsset
 
             BundleRequest bundle;
 
-            if (_bundles.TryGetValue(url, out bundle))
+            if (m_Bundles.TryGetValue(url, out bundle))
             {
                 bundle.Update();
                 bundle.Retain();
-                _loadingBundles.Add(bundle);
+                m_LoadingBundles.Add(bundle);
                 return bundle;
             }
 
@@ -502,18 +476,18 @@ namespace Saro.XAsset
             else
                 bundle = asyncMode ? new BundleAsyncRequest() : new BundleRequest();
 
-            bundle.url = url;
-            _bundles.Add(url, bundle);
+            bundle.Url = url;
+            m_Bundles.Add(url, bundle);
 
-            if (MAX_BUNDLES_PERFRAME > 0 && (bundle is BundleAsyncRequest || bundle is WebBundleRequest))
+            if (k_MAX_BUNDLES_PERFRAME > 0 && (bundle is BundleAsyncRequest || bundle is WebBundleRequest))
             {
-                _toloadBundles.Add(bundle);
+                m_ToloadBundles.Add(bundle);
             }
             else
             {
                 bundle.Load();
-                _loadingBundles.Add(bundle);
-                Log("LoadBundle: " + url);
+                m_LoadingBundles.Add(bundle);
+                INFO("LoadBundle: " + url);
             }
 
             LoadDependencies(bundle, assetBundleName, asyncMode);
@@ -524,52 +498,52 @@ namespace Saro.XAsset
 
         private string GetDataPath(string bundleName)
         {
-            if (string.IsNullOrEmpty(updatePath))
-                return basePath;
+            if (string.IsNullOrEmpty(s_UpdatePath))
+                return s_BasePath;
 
-            if (File.Exists(updatePath + bundleName))
-                return updatePath;
+            if (File.Exists(s_UpdatePath + bundleName))
+                return s_UpdatePath;
 
-            return basePath;
+            return s_BasePath;
         }
 
         private void UpdateBundles()
         {
-            var max = MAX_BUNDLES_PERFRAME;
-            if (_toloadBundles.Count > 0 && max > 0 && _loadingBundles.Count < max)
-                for (var i = 0; i < Math.Min(max - _loadingBundles.Count, _toloadBundles.Count); ++i)
+            var max = k_MAX_BUNDLES_PERFRAME;
+            if (m_ToloadBundles.Count > 0 && max > 0 && m_LoadingBundles.Count < max)
+                for (var i = 0; i < Math.Min(max - m_LoadingBundles.Count, m_ToloadBundles.Count); ++i)
                 {
-                    var item = _toloadBundles[i];
-                    if (item.loadState == LoadState.Init)
+                    var item = m_ToloadBundles[i];
+                    if (item.m_LoadState == ELoadState.Init)
                     {
                         item.Load();
-                        _loadingBundles.Add(item);
-                        _toloadBundles.RemoveAt(i);
+                        m_LoadingBundles.Add(item);
+                        m_ToloadBundles.RemoveAt(i);
                         --i;
                     }
                 }
 
 
-            for (var i = 0; i < _loadingBundles.Count; i++)
+            for (var i = 0; i < m_LoadingBundles.Count; i++)
             {
-                var item = _loadingBundles[i];
+                var item = m_LoadingBundles[i];
                 if (item.Update())
                     continue;
-                _loadingBundles.RemoveAt(i);
+                m_LoadingBundles.RemoveAt(i);
                 --i;
             }
 
-            if (_unusedBundles.Count <= 0) return;
+            if (m_UnusedBundles.Count <= 0) return;
             {
-                for (var i = 0; i < _unusedBundles.Count; i++)
+                for (var i = 0; i < m_UnusedBundles.Count; i++)
                 {
-                    var item = _unusedBundles[i];
-                    if (item.isDone)
+                    var item = m_UnusedBundles[i];
+                    if (item.IsDone)
                     {
                         UnloadDependencies(item);
                         item.Unload();
-                        Log("UnloadBundle: " + item.url);
-                        _unusedBundles.RemoveAt(i);
+                        INFO("UnloadBundle: " + item.Url);
+                        m_UnusedBundles.RemoveAt(i);
                         i--;
                     }
                 }
@@ -578,7 +552,7 @@ namespace Saro.XAsset
 
         private string RemapVariantName(string assetBundleName)
         {
-            var bundlesWithVariant = _activeVariants;
+            var bundlesWithVariant = m_ActiveVariants;
             // Get base bundle path
             var baseName = assetBundleName.Split('.')[0];
 
@@ -628,7 +602,7 @@ namespace Saro.XAsset
 
             yield return new WaitForAssetMgrInitialized(init);
 
-            if (!init.isError)
+            if (!init.IsError)
             {
                 //AssetMgr.AddSearchPath("Assets/XAsset/Demo/Scenes");
             }
@@ -674,12 +648,12 @@ namespace Saro.XAsset
 
             public bool HasFailed()
             {
-                return !string.IsNullOrEmpty(m_AssetsInitRequest.error);
+                return !string.IsNullOrEmpty(m_AssetsInitRequest.Error);
             }
 
             public bool IsReady()
             {
-                return m_AssetsInitRequest.isDone;
+                return m_AssetsInitRequest.IsDone;
             }
         }
 

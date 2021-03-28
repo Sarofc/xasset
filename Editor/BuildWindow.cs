@@ -229,9 +229,9 @@ namespace Saro.XAsset
 
         void EnsureXAssetSettings()
         {
-            m_XAssetSettings = BuildScript.GetSettings();
-            BuildScript.GetManifest();
-            BuildScript.GetBuildRules();
+            m_XAssetSettings = BuildScript.GetXAssetSettings();
+            BuildScript.GetXAssetManifest();
+            BuildScript.GetXAssetBuildRules();
         }
 
         void EnsureProcedureSettings()

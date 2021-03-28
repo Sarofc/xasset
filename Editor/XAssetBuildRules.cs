@@ -1,40 +1,12 @@
-﻿//
-// BuildRules.cs
-//
-// Author:
-//       fjy <jiyuan.feng@live.com>
-//
-// Copyright (c) 2020 fjy
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-// THE SOFTWARE.
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using UnityEditor;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 namespace Saro.XAsset
 {
-    public enum NameBy
+    public enum ENameBy
     {
         Explicit,
         Path,
@@ -63,7 +35,7 @@ namespace Saro.XAsset
 
         [Tooltip("搜索通配符，多个之间请用,(逗号)隔开")] public string searchPattern;
 
-        [Tooltip("命名规则")] public NameBy nameBy = NameBy.Path;
+        [Tooltip("命名规则")] public ENameBy nameBy = ENameBy.Path;
 
         [Tooltip("Explicit的名称")] public string assetBundleName;
 
@@ -85,7 +57,7 @@ namespace Saro.XAsset
                     if (Directory.Exists(file)) continue;
                     var ext = Path.GetExtension(file).ToLower();
                     if ((ext == ".fbx" || ext == ".anim") && !item.Contains(ext)) continue;
-                    if (!BuildRules.ValidateAsset(file)) continue;
+                    if (!XAssetBuildRules.ValidateAsset(file)) continue;
                     var asset = file.Replace("\\", "/");
                     getFiles.Add(asset);
                 }
@@ -95,7 +67,7 @@ namespace Saro.XAsset
         }
     }
 
-    public class BuildRules : ScriptableObject
+    public class XAssetBuildRules : ScriptableObject
     {
         private readonly Dictionary<string, string> _asset2Bundles = new Dictionary<string, string>(StringComparer.Ordinal);
         private readonly Dictionary<string, string[]> _conflicted = new Dictionary<string, string[]>(StringComparer.Ordinal);
@@ -120,6 +92,7 @@ namespace Saro.XAsset
         [Header("Assets")]
         [HideInInspector] public RuleAsset[] ruleAssets = new RuleAsset[0];
         [HideInInspector] public RuleBundle[] ruleBundles = new RuleBundle[0];
+
         #region API
 
         public int AddVersion()
@@ -175,9 +148,9 @@ namespace Saro.XAsset
         {
             if (nameByHash)
             {
-                return Utility.GetMD5Hash(name) + XAsset.Extension;
+                return Utility.GetMD5Hash(name) + XAsset.k_AssetExtension;
             }
-            return name.Replace("\\", "/").ToLower() + XAsset.Extension;
+            return name.Replace("\\", "/").ToLower() + XAsset.k_AssetExtension;
         }
 
         private void Track(string asset, string bundle)
@@ -330,26 +303,26 @@ namespace Saro.XAsset
 
             switch (rule.nameBy)
             {
-                case NameBy.Explicit:
+                case ENameBy.Explicit:
                     {
                         foreach (var asset in assets) _asset2Bundles[asset] = RuledAssetBundleName(rule.assetBundleName);
 
                         break;
                     }
-                case NameBy.Path:
+                case ENameBy.Path:
                     {
                         foreach (var asset in assets) _asset2Bundles[asset] = RuledAssetBundleName(asset);
 
                         break;
                     }
-                case NameBy.Directory:
+                case ENameBy.Directory:
                     {
                         foreach (var asset in assets)
                             _asset2Bundles[asset] = RuledAssetBundleName(Path.GetDirectoryName(asset));
 
                         break;
                     }
-                case NameBy.TopDirectory:
+                case ENameBy.TopDirectory:
                     {
                         var startIndex = rule.searchPath.Length;
                         foreach (var asset in assets)
