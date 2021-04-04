@@ -17,3 +17,13 @@
 - VFS分文件支持，现在只支持4g单文件
 - 优化打包设置
 - 整合热更
+
+# 流程图
+
+
+```mermaid
+graph TD;
+    RequestRemoteVersionList --> LoadLocalVersionList --> GetDownloadAssetInfoList
+    --> Download
+
+```

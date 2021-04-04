@@ -87,9 +87,12 @@ namespace Saro.XAsset
         [Tooltip("构建的版本号")]
         [Header("Builds")]
         public int version;
-        [Tooltip("BuildPlayer 的时候被打包的场景")] public SceneAsset[] scenesInBuild = new SceneAsset[0];
+
+        [Tooltip("BuildPlayer 的时候被打包的场景")] 
+        public SceneAsset[] scenesInBuild = new SceneAsset[0];
+
         public BuildRule[] rules = new BuildRule[0];
-        [Header("Assets")]
+        
         [HideInInspector] public RuleAsset[] ruleAssets = new RuleAsset[0];
         [HideInInspector] public RuleBundle[] ruleBundles = new RuleBundle[0];
 
@@ -97,7 +100,7 @@ namespace Saro.XAsset
 
         public int AddVersion()
         {
-            version = version + 1;
+            version++;
             EditorUtility.SetDirty(this);
             AssetDatabase.SaveAssets();
             return version;
@@ -112,7 +115,7 @@ namespace Saro.XAsset
             Save();
         }
 
-        public AssetBundleBuild[] GetBuilds()
+        public AssetBundleBuild[] GetAssetBundleBuilds()
         {
             var builds = new List<AssetBundleBuild>();
             foreach (var bundle in ruleBundles)

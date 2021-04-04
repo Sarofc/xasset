@@ -3,7 +3,7 @@ using UnityEngine.UI;
 
 namespace Saro.XAsset
 {
-    public class UpdateScreen : MonoBehaviour, IUpdater
+    public class UpdateScreen : MonoBehaviour, Update.IUpdater
     {
         public Text version;
         public Slider progressBar;

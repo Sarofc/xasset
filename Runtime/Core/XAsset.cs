@@ -11,6 +11,7 @@ using Saro.Core;
 using Saro.Core.Jobs;
 using Saro.Core.Services;
 using Saro;
+using Saro.IO;
 
 namespace Saro.XAsset
 {
@@ -56,45 +57,12 @@ namespace Saro.XAsset
             m_SearchPaths.Add(path);
         }
 
-        internal ManifestRequest Initialize()
-        {
-            if (string.IsNullOrEmpty(s_BasePath))
-            {
-                s_BasePath = Application.streamingAssetsPath + Path.DirectorySeparatorChar;
-            }
-
-            if (string.IsNullOrEmpty(s_UpdatePath))
-            {
-                s_UpdatePath = Application.persistentDataPath + Path.DirectorySeparatorChar;
-            }
-
-            //var path = string.Format("{0}/{1}", s_BasePath, Versions.Dataname);
-
-            Clear();
-
-            INFO(string.Format(
-                "Initialize with: runtimeMode={0}\nbasePath：{1}\nupdatePath={2}",
-                s_RuntimeMode, s_BasePath, s_UpdatePath));
-
-            //if (runtimeMode)
-            //{
-            //    if (!Versions.LoadDisk(path))
-            //    {
-            //        throw new Exception("vfile load failed! path=" + path);
-            //    }
-            //}
-
-            var request = new ManifestRequest { Url = k_XAssetManifestAsset };
-            AddAssetRequest(request);
-            return request;
-        }
-
         public void Clear()
         {
-            if (_runningScene != null)
+            if (m_RunningSceneRequest != null)
             {
-                _runningScene.Release();
-                _runningScene = null;
+                m_RunningSceneRequest.Release();
+                m_RunningSceneRequest = null;
             }
 
             RemoveUnusedAssets();
@@ -107,7 +75,7 @@ namespace Saro.XAsset
             m_BundleToDependencies.Clear();
         }
 
-        private SceneAssetRequest _runningScene;
+        private SceneAssetRequest m_RunningSceneRequest;
 
         public IAssetRequest LoadSceneAsync(string path, bool additive)
         {
@@ -121,12 +89,12 @@ namespace Saro.XAsset
             var asset = new SceneAssetAsyncRequest(path, additive);
             if (!additive)
             {
-                if (_runningScene != null)
+                if (m_RunningSceneRequest != null)
                 {
-                    _runningScene.Release(); ;
-                    _runningScene = null;
+                    m_RunningSceneRequest.Release(); ;
+                    m_RunningSceneRequest = null;
                 }
-                _runningScene = asset;
+                m_RunningSceneRequest = asset;
             }
             asset.Load();
             asset.Retain();
@@ -148,17 +116,17 @@ namespace Saro.XAsset
 
         public IAssetRequest LoadAssetAsync<T>(string path) where T : Object
         {
-            return LoadAsset(path, typeof(T), true);
+            return LoadAssetInternal(path, typeof(T), true);
         }
 
         public IAssetRequest LoadAssetAsync(string path, Type type)
         {
-            return LoadAsset(path, type, true);
+            return LoadAssetInternal(path, type, true);
         }
 
         public IAssetRequest LoadAsset(string path, Type type)
         {
-            return LoadAsset(path, type, false);
+            return LoadAssetInternal(path, type, false);
         }
 
         public void UnloadAsset(IAssetRequest asset)
@@ -179,7 +147,7 @@ namespace Saro.XAsset
             {
                 m_Assets.Remove(request.Url);
             }
-            foreach (var item in m_Bundles)
+            foreach (var item in m_UrlToBundles)
             {
                 if (item.Value.IsUnused())
                 {
@@ -188,7 +156,7 @@ namespace Saro.XAsset
             }
             foreach (var request in m_UnusedBundles)
             {
-                m_Bundles.Remove(request.Url);
+                m_UrlToBundles.Remove(request.Url);
             }
         }
 
@@ -196,7 +164,7 @@ namespace Saro.XAsset
 
         #region Private
 
-        internal void OnLoadManifest(XAssetManifest manifest)
+        internal void OnManifestLoaded(XAssetManifest manifest)
         {
             m_ActiveVariants.AddRange(manifest.activeVariants);
 
@@ -282,7 +250,7 @@ namespace Saro.XAsset
             request.Load();
         }
 
-        private AssetRequest LoadAsset(string path, Type type, bool async)
+        private AssetRequest LoadAssetInternal(string path, Type type, bool async)
         {
             if (string.IsNullOrEmpty(path))
             {
@@ -301,8 +269,7 @@ namespace Saro.XAsset
                 return request;
             }
 
-            string assetBundleName;
-            if (GetAssetBundleName(path, out assetBundleName))
+            if (GetAssetBundleName(path, out string assetBundleName))
             {
                 request = async
                     ? new BundleAssetAsyncRequest(assetBundleName)
@@ -318,13 +285,13 @@ namespace Saro.XAsset
                 {
                     request = new WebAssetRequest();
 
-                    INFO("WebAssetRequest 加载: " + path);
+                    //INFO("WebAssetRequest 加载: " + path);
                 }
                 else
                 {
                     request = new AssetRequest();
 
-                    INFO("AssetRequest 加载：" + path);
+                    //INFO("AssetRequest 加载：" + path);
                 }
             }
 
@@ -332,7 +299,9 @@ namespace Saro.XAsset
             request.AssetType = type;
             AddAssetRequest(request);
             request.Retain();
+
             INFO(string.Format("LoadAsset:{0}", path));
+
             return request;
         }
 
@@ -377,11 +346,12 @@ namespace Saro.XAsset
 
         #endregion
 
+       
         #region Bundles
 
         private const int k_MAX_BUNDLES_PERFRAME = 0;
 
-        private Dictionary<string, BundleRequest> m_Bundles = new Dictionary<string, BundleRequest>(StringComparer.Ordinal);
+        private Dictionary<string, BundleRequest> m_UrlToBundles = new Dictionary<string, BundleRequest>(StringComparer.Ordinal);
 
         private List<BundleRequest> m_LoadingBundles = new List<BundleRequest>();
 
@@ -402,8 +372,7 @@ namespace Saro.XAsset
 
         private string[] GetAllDependencies(string bundle)
         {
-            string[] deps;
-            if (m_BundleToDependencies.TryGetValue(bundle, out deps))
+            if (m_BundleToDependencies.TryGetValue(bundle, out string[] deps))
                 return deps;
 
             return new string[0];
@@ -458,9 +427,7 @@ namespace Saro.XAsset
             assetBundleName = RemapVariantName(assetBundleName);
             var url = GetDataPath(assetBundleName) + assetBundleName;
 
-            BundleRequest bundle;
-
-            if (m_Bundles.TryGetValue(url, out bundle))
+            if (m_UrlToBundles.TryGetValue(url, out BundleRequest bundle))
             {
                 bundle.Update();
                 bundle.Retain();
@@ -477,7 +444,7 @@ namespace Saro.XAsset
                 bundle = asyncMode ? new BundleAsyncRequest() : new BundleRequest();
 
             bundle.Url = url;
-            m_Bundles.Add(url, bundle);
+            m_UrlToBundles.Add(url, bundle);
 
             if (k_MAX_BUNDLES_PERFRAME > 0 && (bundle is BundleAsyncRequest || bundle is WebBundleRequest))
             {
@@ -509,9 +476,12 @@ namespace Saro.XAsset
 
         private void UpdateBundles()
         {
-            var max = k_MAX_BUNDLES_PERFRAME;
-            if (m_ToloadBundles.Count > 0 && max > 0 && m_LoadingBundles.Count < max)
-                for (var i = 0; i < Math.Min(max - m_LoadingBundles.Count, m_ToloadBundles.Count); ++i)
+            if (m_ToloadBundles.Count > 0 &&
+                k_MAX_BUNDLES_PERFRAME > 0 &&
+                m_LoadingBundles.Count < k_MAX_BUNDLES_PERFRAME
+                )
+            {
+                for (var i = 0; i < Math.Min(k_MAX_BUNDLES_PERFRAME - m_LoadingBundles.Count, m_ToloadBundles.Count); ++i)
                 {
                     var item = m_ToloadBundles[i];
                     if (item.m_LoadState == ELoadState.Init)
@@ -522,6 +492,7 @@ namespace Saro.XAsset
                         --i;
                     }
                 }
+            }
 
 
             for (var i = 0; i < m_LoadingBundles.Count; i++)
@@ -585,16 +556,49 @@ namespace Saro.XAsset
                     "Ambiguous asset bundle variant chosen because there was no matching active variant: " +
                     bundlesWithVariant[bestFitIndex]);
 
-            return bestFitIndex != -1 ? bundlesWithVariant[bestFitIndex] : assetBundleName;
+            return bestFitIndex != -1 ?
+                bundlesWithVariant[bestFitIndex] :
+                assetBundleName;
         }
-
-
 
         #endregion
 
         #region Service
 
-        public IEnumerator<IAsyncJobResult> Initialize(ServiceLocator serviceLocator)
+        private ManifestRequest Initialize()
+        {
+            if (string.IsNullOrEmpty(s_BasePath))
+            {
+                s_BasePath = Application.streamingAssetsPath + Path.DirectorySeparatorChar;
+            }
+
+            if (string.IsNullOrEmpty(s_UpdatePath))
+            {
+                s_UpdatePath = Application.persistentDataPath + Path.DirectorySeparatorChar;
+            }
+
+            //var path = string.Format("{0}/{1}", s_BasePath, Versions.Dataname);
+
+            Clear();
+
+            INFO(string.Format(
+                "Initialize with: runtimeMode={0}\nbasePath：{1}\nupdatePath={2}",
+                s_RuntimeMode, s_BasePath, s_UpdatePath));
+
+            //if (runtimeMode)
+            //{
+            //    if (!Versions.LoadDisk(path))
+            //    {
+            //        throw new Exception("vfile load failed! path=" + path);
+            //    }
+            //}
+
+            var request = new ManifestRequest { Url = k_XAssetManifestAsset };
+            AddAssetRequest(request);
+            return request;
+        }
+
+        IEnumerator<IAsyncJobResult> IService.Initialize(ServiceLocator serviceLocator)
         {
             Processor.onUpdate += Update;
 
@@ -627,17 +631,15 @@ namespace Saro.XAsset
             UpdateBundles();
         }
 
-        public Type[] GetDependencies()
+        Type[] IService.GetDependencies()
         {
             return null;
         }
 
-        public void Shutdown()
-        {
+        void IService.Shutdown()
+        { }
 
-        }
-
-        private class WaitForAssetMgrInitialized : IAsyncJobResult, IJobDependency, IUnreliableJobDependency
+        private sealed class WaitForAssetMgrInitialized : IAsyncJobResult, IJobDependency, IUnreliableJobDependency
         {
             private readonly ManifestRequest m_AssetsInitRequest;
 

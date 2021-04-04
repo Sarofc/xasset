@@ -5,25 +5,13 @@ using System.IO;
 using UnityEngine;
 using UnityEngine.Networking;
 using Saro.UI;
+using Saro.XAsset.Update;
 
 namespace Saro.XAsset
 {
-    public interface IUpdater
-    {
-        void OnStart();
-
-        void OnMessage(string msg);
-
-        void OnProgress(float progress);
-
-        void OnVersion(string ver);
-
-        void OnClear();
-    }
-
     [RequireComponent(typeof(Downloader))]
     [RequireComponent(typeof(NetworkMonitor))]
-    public class Updater : MonoBehaviour, IUpdater, INetworkMonitorListener
+    public class Updater : MonoBehaviour, Update.IUpdater, INetworkMonitorListener
     {
         private enum EStep
         {
@@ -39,10 +27,10 @@ namespace Saro.XAsset
 
         [SerializeField] private string baseURL = "http://127.0.0.1:7888/DLC/";
         //[SerializeField] private string gameScene = "Game.unity";
-        //[SerializeField] private bool enableVFS = true;
+        [SerializeField] private bool enableVFS = true;
         [SerializeField] private bool development;
 
-        public IUpdater listener { get; set; }
+        public Update.IUpdater listener { get; set; }
 
         private Downloader _downloader;
         private NetworkMonitor _monitor;
@@ -249,7 +237,7 @@ namespace Saro.XAsset
 
         private void AddDownload(VFile item)
         {
-            _downloader.AddDownload(GetDownloadURL(item.Name), item.Name, _savePath + item.Name, item.Hash, item.Len);
+            _downloader.AddDownload(GetDownloadURL(item.name), item.name, _savePath + item.name, item.hash, item.length);
         }
 
         private void PrepareDownloads()
@@ -269,19 +257,19 @@ namespace Saro.XAsset
             for (var i = 1; i < _versions.Count; i++)
             {
                 var item = _versions[i];
-                if (Versions.IsNew(string.Format("{0}{1}", _savePath, item.Name), item.Len, item.Hash))
+                if (Version.IsNew(string.Format("{0}{1}", _savePath, item.name), item.length, item.hash))
                 {
                     AddDownload(item);
                 }
             }
         }
 
-        //private IEnumerator RequestVFS()
-        //{
-        //    var mb = MessageBox.Show("提示", "是否开启VFS？开启有助于提升IO性能和数据安全。", "开启");
-        //    yield return mb;
-        //    enableVFS = mb.isOk;
-        //}
+        private IEnumerator RequestVFS()
+        {
+            var mb = UIDialogue.Show("提示", "是否开启VFS？开启有助于提升IO性能和数据安全。", "开启");
+            yield return mb;
+            enableVFS = mb.isOk;
+        }
 
         private static string GetPlatformForAssetBundles(RuntimePlatform target)
         {
@@ -304,9 +292,9 @@ namespace Saro.XAsset
             }
         }
 
-        private string GetDownloadURL(string filename)
+        private string GetDownloadURL(string versionFileName)
         {
-            return string.Format("{0}{1}/{2}", baseURL, _platform, filename);
+            return string.Format("{0}{1}/{2}", baseURL, _platform, versionFileName);
         }
 
         private IEnumerator Checking()
@@ -316,13 +304,11 @@ namespace Saro.XAsset
                 Directory.CreateDirectory(_savePath);
             }
 
-            //if (_step == EStep.Wait)
-            //{
-            //    yield return RequestVFS();
-            //    _step = EStep.Copy;
-            //}
-
-            _step = EStep.Copy;
+            if (_step == EStep.Wait)
+            {
+                yield return RequestVFS();
+                _step = EStep.Copy;
+            }
 
             if (_step == EStep.Copy)
             {
@@ -331,10 +317,10 @@ namespace Saro.XAsset
 
             if (_step == EStep.Coping)
             {
-                var path = _savePath + Versions.Filename + ".tmp";
-                var versions = Versions.LoadVersions(path);
+                var tmpVersionFile = _savePath + Version.VersionFileName + ".tmp";
+                var vInfos = Version.LoadVersions(tmpVersionFile);
                 var basePath = GetStreamingAssetsPath() + "/";
-                yield return UpdateCopy(versions, basePath);
+                yield return UpdateCopy(vInfos, basePath);
                 _step = EStep.Versions;
             }
 
@@ -346,7 +332,7 @@ namespace Saro.XAsset
             if (_step == EStep.Prepared)
             {
                 OnMessage("正在检查版本信息...");
-                var totalSize = _downloader.size;
+                var totalSize = _downloader.Size;
                 if (totalSize > 0)
                 {
                     var tips = string.Format("发现内容更新，总计需要下载 {0} 内容", Downloader.GetDisplaySize(totalSize));
@@ -387,8 +373,10 @@ namespace Saro.XAsset
                 yield break;
             }
 
-            var request = UnityWebRequest.Get(GetDownloadURL(Versions.Filename));
-            request.downloadHandler = new DownloadHandlerFile(_savePath + Versions.Filename);
+            var versionFilePath = _savePath + Version.VersionFileName;
+
+            var request = UnityWebRequest.Get(GetDownloadURL(Version.VersionFileName));
+            request.downloadHandler = new DownloadHandlerFile(versionFilePath);
             yield return request.SendWebRequest();
             var error = request.error;
             request.Dispose();
@@ -408,7 +396,7 @@ namespace Saro.XAsset
             }
             try
             {
-                _versions = Versions.LoadVersions(_savePath + Versions.Filename, true);
+                _versions = Version.LoadVersions(versionFilePath, true);
                 if (_versions.Count > 0)
                 {
                     PrepareDownloads();
@@ -455,15 +443,15 @@ namespace Saro.XAsset
 
         private IEnumerator RequestCopy()
         {
-            var v1 = Versions.LoadVersion(_savePath + Versions.Filename);
+            var v1 = Version.LoadVersion(_savePath + Version.VersionFileName);
             var basePath = GetStreamingAssetsPath() + "/";
-            var request = UnityWebRequest.Get(basePath + Versions.Filename);
-            var path = _savePath + Versions.Filename + ".tmp";
+            var request = UnityWebRequest.Get(basePath + Version.VersionFileName);
+            var path = _savePath + Version.VersionFileName + ".tmp";
             request.downloadHandler = new DownloadHandlerFile(path);
             yield return request.SendWebRequest();
             if (string.IsNullOrEmpty(request.error))
             {
-                var v2 = Versions.LoadVersion(path);
+                var v2 = Version.LoadVersion(path);
                 if (v2 > v1)
                 {
                     var mb = UIDialogue.Show("提示", "是否将资源解压到本地？", "解压", "跳过");
@@ -472,7 +460,7 @@ namespace Saro.XAsset
                 }
                 else
                 {
-                    Versions.LoadVersions(path);
+                    Version.LoadVersions(path);
                     _step = EStep.Versions;
                 }
             }
@@ -486,10 +474,10 @@ namespace Saro.XAsset
         private IEnumerator UpdateCopy(IList<VFile> versions, string basePath)
         {
             var version = versions[0];
-            if (version.Name.Equals(Versions.Dataname))
+            if (version.name.Equals(Version.Dataname))
             {
-                var request = UnityWebRequest.Get(basePath + version.Name);
-                request.downloadHandler = new DownloadHandlerFile(_savePath + version.Name);
+                var request = UnityWebRequest.Get(basePath + version.name);
+                request.downloadHandler = new DownloadHandlerFile(_savePath + version.name);
                 var req = request.SendWebRequest();
                 while (!req.isDone)
                 {
@@ -505,8 +493,8 @@ namespace Saro.XAsset
                 for (var index = 0; index < versions.Count; index++)
                 {
                     var item = versions[index];
-                    var request = UnityWebRequest.Get(basePath + item.Name);
-                    request.downloadHandler = new DownloadHandlerFile(_savePath + item.Name);
+                    var request = UnityWebRequest.Get(basePath + item.name);
+                    request.downloadHandler = new DownloadHandlerFile(_savePath + item.name);
                     yield return request.SendWebRequest();
                     request.Dispose();
                     OnMessage(string.Format("正在复制文件：{0}/{1}", index, versions.Count));
@@ -547,7 +535,7 @@ namespace Saro.XAsset
 
             OnProgress(1);
             OnMessage("更新完成");
-            var version = Versions.LoadVersion(_savePath + Versions.Filename);
+            var version = Version.LoadVersion(_savePath + Version.VersionFileName);
             if (version > 0)
             {
                 OnVersion(version.ToString());

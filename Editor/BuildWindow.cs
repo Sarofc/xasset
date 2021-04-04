@@ -4,12 +4,12 @@ using System.Collections.Generic;
 using System.Reflection;
 using Saro.Core;
 
-namespace Saro.XAsset
+namespace Saro.XAsset.Build
 {
-    public class BuildWindow : EditorWindow
+    public sealed class BuildWindow : EditorWindow
     {
         [MenuItem("Tools/Build")]
-        static void DoIt()
+        static void ShowBuildWindow()
         {
             var window = GetWindow<BuildWindow>();
             window.Show();
@@ -144,29 +144,27 @@ namespace Saro.XAsset
 
                 if (GUI.Button(rect, "Build Selected"))
                 {
-                    ExecuteAction(BuildOptions);
+                    ExecuteAction(() =>
+                    {
+                        for (int i = 0; i < m_BuildMethods.Count; i++)
+                        {
+                            var buildMethod = m_BuildMethods[i];
+                            if ((m_XAssetSettings.buildMethodOptions & (1 << i)) != 0)
+                            {
+                                if (buildMethod.callback.Invoke() == false)
+                                {
+                                    throw new System.Exception(string.Format("Execute {0} Failed, Abort！", buildMethod.description));
+                                }
+
+                                Debug.Log($"Execute {buildMethod.description} Successfull");
+                            }
+                        }
+                    });
                 }
 
                 for (int i = 0; i < m_BuildMethods.Count; i++)
                 {
                     DrawBuildMethod(i, m_BuildMethods[i]);
-                }
-            }
-        }
-
-        void BuildOptions()
-        {
-            for (int i = 0; i < m_BuildMethods.Count; i++)
-            {
-                var buildMethod = m_BuildMethods[i];
-                if ((m_XAssetSettings.buildOptions & (1 << i)) != 0)
-                {
-                    if (buildMethod.callback.Invoke() == false)
-                    {
-                        throw new System.Exception(string.Format("Execute {0} Failed, Abort！", buildMethod.description));
-                    }
-
-                    Debug.LogFormat("Execute {0} Successfull", buildMethod.description);
                 }
             }
         }
@@ -183,10 +181,10 @@ namespace Saro.XAsset
                 rect1.x += 10f;
                 rect1.width = 50f;
 
-                buildMethod.selected = (m_XAssetSettings.buildOptions & (1 << index)) != 0;
+                buildMethod.selected = (m_XAssetSettings.buildMethodOptions & (1 << index)) != 0;
                 buildMethod.selected = EditorGUI.ToggleLeft(rect1, string.Empty, buildMethod.selected);
-                if (buildMethod.selected) m_XAssetSettings.buildOptions |= 1 << index;
-                else m_XAssetSettings.buildOptions &= ~(1 << index);
+                if (buildMethod.selected) m_XAssetSettings.buildMethodOptions |= 1 << index;
+                else m_XAssetSettings.buildMethodOptions &= ~(1 << index);
 
                 rect1.x = 40f;
                 rect1.width = 300f;

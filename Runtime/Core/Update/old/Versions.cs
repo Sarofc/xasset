@@ -11,52 +11,52 @@ namespace Saro.XAsset
         Hash,
     }
 
-    public static class Versions
+    public static class Version
     {
-        public const string Dataname = "res.bytes";
-        public const string Filename = "ver.bytes";
+        public const string Dataname = "dat.bytes";
+        public const string VersionFileName = "ver.bytes";
         public static readonly VerifyBy verifyBy = VerifyBy.Hash;
-        //private static readonly VDisk _disk = new VDisk();
+        private static readonly VDisk _disk = new VDisk();
         private static readonly Dictionary<string, VFile> _updateData = new Dictionary<string, VFile>(StringComparer.Ordinal);
         private static readonly Dictionary<string, VFile> _baseData = new Dictionary<string, VFile>(StringComparer.Ordinal);
 
-        //public static AssetBundle LoadAssetBundleFromFile(string url)
-        //{
-        //    if (!File.Exists(url))
-        //    {
-        //        if (_disk != null)
-        //        {
-        //            var name = Path.GetFileName(url);
-        //            var file = _disk.GetFile(name, string.Empty);
-        //            if (file != null)
-        //            {
-        //                return AssetBundle.LoadFromFile(_disk.name, 0, (ulong)file.offset);
-        //            }
-        //        }
-        //    }
-        //    return AssetBundle.LoadFromFile(url);
-        //}
+        public static AssetBundle LoadAssetBundleFromFile(string url)
+        {
+            if (!File.Exists(url))
+            {
+                if (_disk != null)
+                {
+                    var name = Path.GetFileName(url);
+                    var file = _disk.GetFile(name, string.Empty);
+                    if (file != null)
+                    {
+                        return AssetBundle.LoadFromFile(_disk.name, 0, (ulong)file.offset);
+                    }
+                }
+            }
+            return AssetBundle.LoadFromFile(url);
+        }
 
-        //public static AssetBundleCreateRequest LoadAssetBundleFromFileAsync(string url)
-        //{
-        //    if (!File.Exists(url))
-        //    {
-        //        if (_disk != null)
-        //        {
-        //            var name = Path.GetFileName(url);
-        //            var file = _disk.GetFile(name, string.Empty);
-        //            if (file != null)
-        //            {
-        //                return AssetBundle.LoadFromFileAsync(_disk.name, 0, (ulong)file.offset);
-        //            }
-        //        }
-        //    }
-        //    return AssetBundle.LoadFromFileAsync(url);
-        //}
+        public static AssetBundleCreateRequest LoadAssetBundleFromFileAsync(string url)
+        {
+            if (!File.Exists(url))
+            {
+                if (_disk != null)
+                {
+                    var name = Path.GetFileName(url);
+                    var file = _disk.GetFile(name, string.Empty);
+                    if (file != null)
+                    {
+                        return AssetBundle.LoadFromFileAsync(_disk.name, 0, (ulong)file.offset);
+                    }
+                }
+            }
+            return AssetBundle.LoadFromFileAsync(url);
+        }
 
         public static void BuildVersions(string outputPath, string[] bundles, int version)
         {
-            var path = outputPath + "/" + Filename;
+            var path = outputPath + "/" + VersionFileName;
             if (File.Exists(path))
             {
                 File.Delete(path);
@@ -86,7 +86,7 @@ namespace Saro.XAsset
                 writer.Write(disk.files.Count + 1);
                 using (var fs = File.OpenRead(dataPath))
                 {
-                    var file = new VFile { Name = Dataname, Len = fs.Length, Hash = Utility.GetCRC32Hash(fs) };
+                    var file = new VFile { name = Dataname, length = fs.Length, hash = Utility.GetCRC32Hash(fs) };
                     file.Serialize(writer);
                 }
                 foreach (var file in disk.files)
@@ -129,11 +129,11 @@ namespace Saro.XAsset
                 var count = reader.ReadInt32();
                 for (var i = 0; i < count; i++)
                 {
-                    var version = new VFile();
-                    version.Deserialize(reader);
-                    list.Add(version);
-                    data[version.Name] = version;
-                    var dir = string.Format("{0}/{1}", rootDir, Path.GetDirectoryName(version.Name));
+                    var vInfo = new VFile();
+                    vInfo.Deserialize(reader);
+                    list.Add(vInfo);
+                    data[vInfo.name] = vInfo;
+                    var dir = string.Format("{0}/{1}", rootDir, Path.GetDirectoryName(vInfo.name));
                     if (!Directory.Exists(dir))
                     {
                         Directory.CreateDirectory(dir);
@@ -143,24 +143,24 @@ namespace Saro.XAsset
             }
         }
 
-        //public static void UpdateDisk(string savePath, List<VFile> newFiles)
-        //{
-        //    var saveFiles = new List<VFile>();
-        //    var files = _disk.files;
-        //    foreach (var file in files)
-        //    {
-        //        if (_updateData.ContainsKey(file.name))
-        //        {
-        //            saveFiles.Add(file);
-        //        }
-        //    }
-        //    _disk.Update(savePath, newFiles, saveFiles);
-        //}
+        public static void UpdateDisk(string savePath, List<VFile> newFiles)
+        {
+            var saveFiles = new List<VFile>();
+            var files = _disk.files;
+            foreach (var file in files)
+            {
+                if (_updateData.ContainsKey(file.name))
+                {
+                    saveFiles.Add(file);
+                }
+            }
+            _disk.Update(savePath, newFiles, saveFiles);
+        }
 
-        //public static bool LoadDisk(string filename)
-        //{
-        //    return _disk.Load(filename);
-        //}
+        public static bool LoadDisk(string filename)
+        {
+            return _disk.Load(filename);
+        }
 
         public static bool IsNew(string path, long len, string hash)
         {
@@ -169,7 +169,7 @@ namespace Saro.XAsset
             if (_baseData.TryGetValue(key, out file))
             {
                 if (key.Equals(Dataname) ||
-                    file.Len == len && file.Hash.Equals(hash, StringComparison.OrdinalIgnoreCase))
+                    file.length == len && file.hash.Equals(hash, StringComparison.OrdinalIgnoreCase))
                 {
                     return false;
                 }

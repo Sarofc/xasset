@@ -3,7 +3,7 @@ using System.IO;
 using UnityEngine;
 using UnityEngine.Networking;
 
-namespace Saro.XAsset
+namespace Saro.XAsset.Update
 {
     public class Download : DownloadHandlerScript, IDisposable, ICloneable
     {
@@ -11,7 +11,7 @@ namespace Saro.XAsset
 
         public string Error { get; private set; }
 
-        public long Len { get; set; }
+        public long Length { get; set; }
 
         public string Hash { get; set; }
 
@@ -42,7 +42,7 @@ namespace Saro.XAsset
 
         protected override float GetProgress()
         {
-            return Position * 1f / Len;
+            return Position * 1f / Length;
         }
 
         protected override bool ReceiveData(byte[] buffer, int dataLength)
@@ -66,7 +66,7 @@ namespace Saro.XAsset
 
         public override string ToString()
         {
-            return string.Format("{0}, size:{1}, hash:{2}", Url, Len, Hash);
+            return string.Format("{0}, size:{1}, hash:{2}", Url, Length, Hash);
         }
 
         public void Start()
@@ -81,7 +81,7 @@ namespace Saro.XAsset
             m_Running = true;
             m_Stream = new FileStream(TempPath, FileMode.OpenOrCreate, FileAccess.Write);
             Position = m_Stream.Length;
-            if (Position < Len)
+            if (Position < Length)
             {
                 m_Stream.Seek(Position, SeekOrigin.Begin);
                 m_Request = UnityWebRequest.Get(Url);
@@ -100,7 +100,7 @@ namespace Saro.XAsset
         {
             if (m_Running)
             {
-                if (m_Request.isDone && m_Request.downloadedBytes < (ulong)Len)
+                if (m_Request.isDone && m_Request.downloadedBytes < (ulong)Length)
                 {
                     Error = "unknown error: downloadedBytes < len";
                 }
@@ -148,17 +148,21 @@ namespace Saro.XAsset
                 {
                     using (var fs = File.OpenRead(TempPath))
                     {
-                        if (fs.Length != Len)
+                        if (fs.Length != Length)
                         {
                             Error = "下载文件长度异常:" + fs.Length;
                         }
-                        if (Versions.verifyBy == VerifyBy.Hash)
+
+                        if (VersionControl.s_VerifyBy == VersionControl.EVerifyBy.Crc32)
                         {
-                            const StringComparison compare = StringComparison.OrdinalIgnoreCase;
-                            if (!Hash.Equals(Utility.GetCRC32Hash(fs), compare))
+                            if (!Hash.Equals(Utility.GetCRC32Hash(fs), StringComparison.OrdinalIgnoreCase))
                             {
-                                Error = "下载文件哈希异常:" + Hash;
+                                Error = $"下载文件异常. name: {TempPath} hash: {Hash}";
                             }
+                        }
+                        else if (VersionControl.s_VerifyBy == VersionControl.EVerifyBy.Md5)
+                        {
+                            throw new NotImplementedException("md5");
                         }
                     }
                 }
@@ -196,7 +200,7 @@ namespace Saro.XAsset
                 Id = Id,
                 Hash = Hash,
                 Url = Url,
-                Len = Len,
+                Length = Length,
                 savePath = savePath,
                 Completed = Completed,
                 Name = Name

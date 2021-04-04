@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEditor;
 
-namespace Saro.XAsset
+namespace Saro.XAsset.Build
 {
     class ApplyRuleMenuItem
     {

@@ -1,6 +1,7 @@
+using UnityEditor;
 using UnityEngine;
 
-namespace Saro.XAsset
+namespace Saro.XAsset.Build
 {
     public class XAssetSettings : ScriptableObject
     {
@@ -13,7 +14,10 @@ namespace Saro.XAsset
         [Tooltip("打包到单个文件夹（false: 生成带时间戳的文件夹）")]
         public bool buildSingleFolder = true;
 
+        public BuildAssetBundleOptions buildAssetBundleOptions = BuildAssetBundleOptions.DeterministicAssetBundle | BuildAssetBundleOptions.ChunkBasedCompression;
+
+
         [HideInInspector]
-        public int buildOptions;
+        public int buildMethodOptions;
     }
 }

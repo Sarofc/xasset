@@ -211,7 +211,7 @@ namespace Saro.XAsset
                 }
                 else
                 {
-                    XAsset.Get().OnLoadManifest(manifest);
+                    XAsset.Get().OnManifestLoaded(manifest);
                     m_Request.AssetBundle.Unload(true);
                     m_Request.AssetBundle = null;
                 }
@@ -650,6 +650,7 @@ namespace Saro.XAsset
         {
             //asset = Versions.LoadAssetBundleFromFile(url);
             Asset = AssetBundle.LoadFromFile(Url);
+            //Asset = XAsset.Get().LoadAssetBundleFromFile(Url);
 
             if (AssetBundle == null)
                 Error = Url + " LoadFromFile failed.";
@@ -722,6 +723,7 @@ namespace Saro.XAsset
         {
             //_request = Versions.LoadAssetBundleFromFileAsync(url);
             m_Request = AssetBundle.LoadFromFileAsync(Url);
+            //m_Request = XAsset.Get().LoadAssetBundleFromFileAsync(Url);
 
             if (m_Request == null)
             {

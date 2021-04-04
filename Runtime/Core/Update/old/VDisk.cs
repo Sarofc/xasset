@@ -6,29 +6,29 @@ namespace Saro.XAsset
 {
     public class VFile
     {
-        public string Name { get; set; }
-        public long Id { get; set; }
-        public string Hash { get; set; }
-        public long Len { get; set; }
-        public long Offset { get; set; }
+        public string name { get; set; }
+        public long id { get; set; }
+        public string hash { get; set; }
+        public long length { get; set; }
+        public long offset { get; set; }
 
         public VFile()
         {
-            Offset = -1;
+            offset = -1;
         }
 
         public void Serialize(BinaryWriter writer)
         {
-            writer.Write(Name);
-            writer.Write(Len);
-            writer.Write(Hash);
+            writer.Write(name);
+            writer.Write(length);
+            writer.Write(hash);
         }
 
         public void Deserialize(BinaryReader reader)
         {
-            Name = reader.ReadString();
-            Len = reader.ReadInt64();
-            Hash = reader.ReadString();
+            name = reader.ReadString();
+            length = reader.ReadInt64();
+            hash = reader.ReadString();
         }
     }
 
@@ -53,13 +53,13 @@ namespace Saro.XAsset
 
         private void AddFile(VFile file)
         {
-            _data[file.Name] = file;
+            _data[file.name] = file;
             files.Add(file);
         }
 
         public void AddFile(string path, long len, string hash)
         {
-            var file = new VFile { Name = path, Len = len, Hash = hash };
+            var file = new VFile { name = path, length = len, hash = hash };
             AddFile(file);
         }
 
@@ -102,7 +102,7 @@ namespace Saro.XAsset
                 var count = reader.ReadInt32();
                 for (var i = 0; i < count; i++)
                 {
-                    var file = new VFile { Id = i };
+                    var file = new VFile { id = i };
                     file.Deserialize(reader);
                     AddFile(file);
                 }
@@ -118,8 +118,8 @@ namespace Saro.XAsset
             for (var i = 0; i < files.Count; i++)
             {
                 var file = files[i];
-                file.Offset = _pos + _len;
-                _len += file.Len;
+                file.offset = _pos + _len;
+                _len += file.length;
             }
         }
 
@@ -138,13 +138,13 @@ namespace Saro.XAsset
             {
                 foreach (var item in saveFiles)
                 {
-                    var path = string.Format("{0}/{1}", dir, item.Name);
+                    var path = string.Format("{0}/{1}", dir, item.name);
                     if (File.Exists(path)) { continue; }
-                    stream.Seek(item.Offset, SeekOrigin.Begin);
+                    stream.Seek(item.offset, SeekOrigin.Begin);
                     using (var fs = File.OpenWrite(path))
                     {
                         var count = 0L;
-                        var len = item.Len;
+                        var len = item.length;
                         while (count < len)
                         {
                             var read = (int)Math.Min(len - count, _buffers.Length);
@@ -172,7 +172,7 @@ namespace Saro.XAsset
                 }
                 foreach (var item in newFiles)
                 {
-                    var path = string.Format("{0}/{1}", dir, item.Name);
+                    var path = string.Format("{0}/{1}", dir, item.name);
                     WriteFile(path, writer);
                     File.Delete(path);
                     UnityEngine.Debug.Log("Delete:" + path);
@@ -193,7 +193,7 @@ namespace Saro.XAsset
                 }
                 foreach (var item in files)
                 {
-                    var path = dir + "/" + item.Name;
+                    var path = dir + "/" + item.name;
                     WriteFile(path, writer);
                 }
             }

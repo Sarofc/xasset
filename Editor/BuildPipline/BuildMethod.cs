@@ -31,7 +31,7 @@ namespace Saro.XAsset
         {
             var ret = new List<BuildMethod>();
             var assembly = Assembly.Load("Saro.XAsset.Editor");
-            var type = assembly.GetType("Saro.XAsset.BuildMethods");
+            var type = assembly.GetType("Saro.XAsset.Build.BuildMethods");
             var methods = type.GetMethods(BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public);
             foreach (var method in methods)
             {
@@ -72,7 +72,7 @@ namespace Saro.XAsset
         }
     }
 
-    public class BuildMethodAttribute : Attribute
+    public sealed class BuildMethodAttribute : Attribute
     {
         public int order;
         public string description;
