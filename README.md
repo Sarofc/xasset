@@ -20,10 +20,26 @@
 
 # 流程图
 
+1. 资源更新
 
-```mermaid
-graph TD;
-    RequestRemoteVersionList --> LoadLocalVersionList --> GetDownloadAssetInfoList
-    --> Download
+    ```mermaid
+    graph TD;
+        LoadLocalVersionList --> RequestRemoteVersionList --> GetDownloadAssetInfoList
+        --> Download
 
-```
+    ```
+
+2. vfs时,额外加载流程
+
+   ```csharp
+
+    var fileInfoMap = new Dictionary<string, VersionFileInfo>();
+    var fileInfo = fileInfoMap[file];
+
+    // 针对ab
+    AssetBundles.Load(fileInfo.pack, fileInfo.offset, fileInfo.length);
+
+    // 针对自定义文件
+    var vfs = new VFileSystem(fileInfo.pack);
+    vfs.ReadFile(fileInfo.file);
+   ```

@@ -1,10 +1,5 @@
-﻿using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
-using System.Reflection;
+﻿using UnityEngine;
 using UnityEditor;
-using UnityEngine;
-using Debug = UnityEngine.Debug;
 
 namespace Saro.XAsset.Build
 {
@@ -17,43 +12,36 @@ namespace Saro.XAsset.Build
         //    Debug.Log("[XAsset] ClearAssetBundles");
         //}
 
-        [BuildMethod(1, "Build Rules", false)]
+        [XAssetBuildMethod(1, "Build Rules", false)]
         private static void ApplyBuildRules()
         {
-            var watch = new Stopwatch();
+            var watch = new System.Diagnostics.Stopwatch();
             watch.Start();
             BuildScript.ApplyBuildRules();
             watch.Stop();
             Debug.Log("[XAsset] ApplyBuildRules " + watch.ElapsedMilliseconds + " ms.");
         }
 
-        //[BuildMethod(2, "Build Manifest")]
-        //private static void BuildManifest()
-        //{
-        //    BuildScript.BuildManifest();
-        //    Debug.Log("[XAsset] Build Manifest...");
-        //}
-
-        [BuildMethod(4, "Build AssetBundles")]
+        [XAssetBuildMethod(4, "Build AssetBundles")]
         private static void BuildAssetBundles()
         {
-            var watch = new Stopwatch();
+            var watch = new System.Diagnostics.Stopwatch();
             watch.Start();
-            //BuildScript.ApplyBuildRules();
             BuildScript.BuildAssetBundles();
             watch.Stop();
             Debug.Log("[XAsset] BuildAssetBundles " + watch.ElapsedMilliseconds + " ms.");
         }
 
-        [BuildMethod(5, "Copy AssetBundles")]
+        [XAssetBuildMethod(5, "Copy AssetBundles")]
         private static void CopyAssetBundles()
         {
-            BuildScript.CopyAssetBundlesTo(Application.streamingAssetsPath);
+            var destFolder = Application.streamingAssetsPath + "/" + BuildScript.GetPlatformName();
+            BuildScript.CopyAssetBundlesTo(destFolder);
             AssetDatabase.Refresh();
-            Debug.Log("[XAsset] Copy AssetBundles to SreammingFolder");
+            Debug.Log($"[XAsset] Copy AssetBundles to SreammingFolder: {destFolder}");
         }
 
-        [BuildMethod(50, "Build Player")]
+        [XAssetBuildMethod(50, "Build Player")]
         private static void BuildPlayer()
         {
             BuildScript.BuildPlayer();

@@ -86,7 +86,7 @@ namespace Saro.UI
             text_dialogue_content = null;
             text_dialogue_btnleft = null;
             text_dialogue_btnright = null;
-            Object.DestroyImmediate(gameObject);
+            Object.Destroy(gameObject);
         }
 
         private static UIDialogue Create(string title, string content, string ok, string no)

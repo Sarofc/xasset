@@ -6,47 +6,47 @@ namespace Saro.XAsset.Update
     {
         void OnReachablityChanged(NetworkReachability reachability);
     }
-    
+
     public class NetworkMonitor : MonoBehaviour
     {
-        private NetworkReachability _reachability;
-        public INetworkMonitorListener listener { get; set; }
-        [SerializeField]private float sampleTime = 0.5f;
-        private float _time;
-        private bool _started;
-        
+        private NetworkReachability m_Reachability;
+        public INetworkMonitorListener Listener { get; set; }
+        [SerializeField] private float SampleTime = 0.5f;
+        private float m_Time;
+        private bool m_Started;
+
         private void Start()
         {
-            _reachability = Application.internetReachability;
+            m_Reachability = Application.internetReachability;
             Restart();
         }
 
         public void Restart()
         {
-            _time = Time.timeSinceLevelLoad;
-            _started = true;
+            m_Time = Time.timeSinceLevelLoad;
+            m_Started = true;
         }
 
         public void Stop()
         {
-            _started = false;
+            m_Started = false;
         }
 
         private void Update()
         {
-            if (_started && Time.timeSinceLevelLoad - _time >= sampleTime)
+            if (m_Started && Time.timeSinceLevelLoad - m_Time >= SampleTime)
             {
                 var state = Application.internetReachability;
-                if (_reachability != state)
+                if (m_Reachability != state)
                 {
-                    if (listener != null)
+                    if (Listener != null)
                     {
-                        listener.OnReachablityChanged(state);
+                        Listener.OnReachablityChanged(state);
                     }
-                    _reachability = state;
-                } 
-                _time = Time.timeSinceLevelLoad;  
-            } 
+                    m_Reachability = state;
+                }
+                m_Time = Time.timeSinceLevelLoad;
+            }
         }
     }
 }

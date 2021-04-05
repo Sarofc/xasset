@@ -2,6 +2,7 @@
 using Saro.UI;
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -10,7 +11,7 @@ namespace Saro.XAsset.Update
 {
     [RequireComponent(typeof(Downloader))]
     [RequireComponent(typeof(NetworkMonitor))]
-    public sealed class ResourceUpdater : MonoBehaviour, IUpdater, INetworkMonitorListener
+    public sealed class AssetUpdater : MonoBehaviour, IUpdater, INetworkMonitorListener
     {
         private enum EStep
         {
@@ -22,27 +23,32 @@ namespace Saro.XAsset.Update
             Download,
         }
 
+        public IUpdater Listener { get; set; }
+
+        // TODO 资源地址应该读取配置来获取,且配置是可热更的
+        [SerializeField] private string m_BaseURL = "http://127.0.0.1:7888/DLC/";
+
         private EStep m_Step;
         private Downloader m_Downloader;
         private NetworkMonitor m_NetworkMonitor;
-        private string m_SavePath;
+        private string m_DlcPath;
+        private string m_BasePath;
 
-        private string m_BaseURL;
-        private string m_Platform;
         private bool m_NetReachabilityChanged;
-
-        private VersionList m_LoacalVersionList;
-        private VersionList m_RemoteVersionList;
-
-        public IUpdater Listener { get; set; }
 
         private IEnumerator m_Checking;
 
         private void Start()
         {
             m_Downloader = GetComponent<Downloader>();
+            m_Downloader.onUpdate = OnUpdate;
+            m_Downloader.onFinished = OnComplete;
+
             m_NetworkMonitor = GetComponent<NetworkMonitor>();
-            m_NetworkMonitor.listener = this;
+            m_NetworkMonitor.Listener = this;
+
+            m_DlcPath = GetDlcPath();
+            m_BasePath = GetBasePath();
 
             m_Step = EStep.Wait;
         }
@@ -90,11 +96,11 @@ namespace Saro.XAsset.Update
             StartCoroutine(m_Checking);
         }
 
-        IEnumerator Checking()
+        private IEnumerator Checking()
         {
-            if (!Directory.Exists(m_SavePath))
+            if (!Directory.Exists(m_DlcPath))
             {
-                Directory.CreateDirectory(m_SavePath);
+                Directory.CreateDirectory(m_DlcPath);
             }
 
             if (m_Step == EStep.Wait)
@@ -111,9 +117,8 @@ namespace Saro.XAsset.Update
             if (m_Step == EStep.Coping)
             {
                 var tmpLocalVersionFile = GetTmpLocalVersionListPath();
-                var versionList = VersionControl.LoadVersionList(tmpLocalVersionFile);
-                var basePath = GetStreamingAssetsPath() + "/";
-                yield return UpdateCopy(versionList, basePath);
+                var versionList = VersionList.LoadVersionList(tmpLocalVersionFile);
+                yield return UpdateCopy(versionList);
                 m_Step = EStep.Versions;
             }
 
@@ -124,8 +129,9 @@ namespace Saro.XAsset.Update
 
             if (m_Step == EStep.Prepared)
             {
-                ((IUpdater)this).OnMessage("正在检查版本信息...");
+                ((IUpdater)this).OnMessage("正在获取下载信息...");
                 var totalSize = m_Downloader.Size;
+
                 if (totalSize > 0)
                 {
                     var tips = string.Format("发现内容更新，总计需要下载 {0} 内容", Downloader.GetDisplaySize(totalSize));
@@ -148,37 +154,44 @@ namespace Saro.XAsset.Update
             }
         }
 
-        private string GetTmpLocalVersionListPath()
-        {
-            return m_SavePath + VersionControl.k_VersionFileName + ".tmp";
-        }
-
         private IEnumerator RequestCopy()
         {
-            var versionFilePath = m_SavePath + VersionControl.k_VersionFileName;
-            var localVersion_1 = VersionList.LoadVersionOnly(versionFilePath);
+            var localVersionListPath = GetLocalVersionListPath();
+            var localVersion = VersionList.LoadVersionOnly(localVersionListPath);
 
-            var basePath = GetStreamingAssetsPath() + "/";
-            var request = UnityWebRequest.Get(basePath + VersionControl.k_VersionFileName);
-            var tmpLocalVersionFilePath = GetTmpLocalVersionListPath();
-            request.downloadHandler = new DownloadHandlerFile(tmpLocalVersionFilePath);
+            var baseVersionListPath = GetBaseVersionListPath();
+            var request = UnityWebRequest.Get(baseVersionListPath);
             yield return request.SendWebRequest();
 
             if (string.IsNullOrEmpty(request.error))
             {
-                var localVersion_2 = VersionList.LoadVersionOnly(tmpLocalVersionFilePath);
-                if (localVersion_1 == null && localVersion_2 != null)
+                Version baseLocalVersion = null;
+
+                using (var ms = new MemoryStream(request.downloadHandler.data))
                 {
-                    if (localVersion_2 > localVersion_1)
+                    using (var br = new BinaryReader(ms))
                     {
-                        var mb = UIDialogue.Show("提示", "是否将资源解压到本地？", "解压", "跳过");
-                        yield return mb;
-                        m_Step = mb.isOk ? EStep.Coping : EStep.Versions;
+                        baseLocalVersion = VersionList.LoadVersionOnly(br);
+                    }
+                }
+
+                if (baseLocalVersion != null)
+                {
+                    if (localVersion == null || baseLocalVersion > localVersion)
+                    {
+                        var tmpLocalVersionFilePath = GetTmpLocalVersionListPath();
+                        File.WriteAllBytes(tmpLocalVersionFilePath, request.downloadHandler.data);
+
+                        m_Step = EStep.Coping;
                     }
                     else
                     {
                         m_Step = EStep.Versions;
                     }
+                }
+                else
+                {
+                    m_Step = EStep.Versions;
                 }
             }
             else
@@ -193,7 +206,7 @@ namespace Saro.XAsset.Update
             ((IUpdater)this).OnMessage("正在获取版本信息...");
             if (Application.internetReachability == NetworkReachability.NotReachable)
             {
-                var mb = UIDialogue.Show("提示", "请检查网络连接状态", "重试", "推出");
+                var mb = UIDialogue.Show("提示", "请检查网络连接状态", "重试", "退出");
                 yield return mb;
                 if (mb.isOk)
                 {
@@ -206,16 +219,15 @@ namespace Saro.XAsset.Update
                 yield break;
             }
 
-            var versionFilePath = m_SavePath + VersionControl.k_VersionFileName;
-
-            var request = UnityWebRequest.Get(GetDownloadURL(VersionControl.k_VersionFileName));
-            request.downloadHandler = new DownloadHandlerFile(versionFilePath);
+            var tempVersionFilePath = GetTmpLocalVersionListPath();
+            var request = UnityWebRequest.Get(GetDownloadURL(VersionList.k_VersionFileName));
+            request.downloadHandler = new DownloadHandlerFile(tempVersionFilePath);
             yield return request.SendWebRequest();
             var error = request.error;
             request.Dispose();
             if (!string.IsNullOrEmpty(error))
             {
-                var mb = UI.UIDialogue.Show("提示", string.Format("获取服务器版本失败: {0}", error), "重试");
+                var mb = UI.UIDialogue.Show("提示", $"获取服务器版本失败: \n{error}", "重试");
                 yield return mb;
                 if (mb.isOk)
                 {
@@ -230,10 +242,11 @@ namespace Saro.XAsset.Update
 
             try
             {
-                m_RemoteVersionList = VersionControl.LoadVersionList(versionFilePath);
-                if (m_RemoteVersionList.IsValid())
+                var remoteVersionList = VersionList.LoadVersionList(tempVersionFilePath);
+                var localVersionList = VersionList.LoadVersionList(GetLocalVersionListPath());
+
+                if (PrepareDownloads(remoteVersionList, localVersionList))
                 {
-                    PrepareDownloads();
                     m_Step = EStep.Prepared;
                 }
                 else
@@ -245,7 +258,7 @@ namespace Saro.XAsset.Update
             {
                 Debug.LogException(e);
 
-                UI.UIDialogue.Show("提示", "版本文件加载失败", "重试", "退出").onComplete +=
+                UIDialogue.Show("提示", "版本文件加载失败", "重试", "退出").onComplete +=
                      delegate (UI.UIDialogue.EventId id)
                      {
                          if (id == UI.UIDialogue.EventId.Ok)
@@ -260,28 +273,33 @@ namespace Saro.XAsset.Update
             }
         }
 
-        //private IEnumerator RequestVFS()
-        //{
-        //    var mb = UI.UIDialogue.Show("提示", "是否开启VFS？开启有助于提升IO性能和数据安全。", "开启");
-        //    yield return mb;
-        //    // TODO
-        //    //enableVFS = mb.isOk;
-        //}
-
-        private IEnumerator UpdateCopy(VersionList versionList, string basePath)
+        private IEnumerator UpdateCopy(VersionList versionList)
         {
+            ((IUpdater)this).OnMessage("开始复制文件...");
+
             var versionAssetInfos = versionList.versionAssetInfos;
 
-            var index = 1;
+            var fileToCopy = new HashSet<string>();
             foreach (var item in versionAssetInfos)
             {
-                var request = UnityWebRequest.Get(basePath + item.Value.name);
+                fileToCopy.Add(item.Value.file);
+            }
+
+            var index = 0;
+            foreach (var file in fileToCopy)
+            {
+                Debug.LogError(file);
+
+                var request = UnityWebRequest.Get(m_BasePath + file);
+                request.downloadHandler = new DownloadHandlerFile(m_DlcPath + file);
                 yield return request.SendWebRequest();
                 request.Dispose();
-                ((IUpdater)this).OnMessage(string.Format("正在复制文件：{0}/{1}", index, versionAssetInfos.Count));
-                ((IUpdater)this).OnProgress(index * 1f / versionAssetInfos.Count);
+                ((IUpdater)this).OnMessage(string.Format("正在复制文件：{0}/{1}", index, fileToCopy.Count));
+                ((IUpdater)this).OnProgress(index * 1f / fileToCopy.Count);
                 index++;
             }
+
+            OverrideLocalVersionListUseTmp();
         }
 
         public void Clear()
@@ -294,18 +312,35 @@ namespace Saro.XAsset.Update
             };
         }
 
+        private void OnUpdate(long progress, long size, float speed)
+        {
+            ((IUpdater)this).OnMessage(string.Format("下载中...\t\t{0}/{1}\t\t速度: {2}",
+                Downloader.GetDisplaySize(progress),
+                Downloader.GetDisplaySize(size),
+                Downloader.GetDisplaySpeed(speed)));
+
+            ((IUpdater)this).OnProgress(progress * 1f / size);
+        }
+
         private void OnComplete()
         {
             // TODO 合并文件
 
-            ((IUpdater)this).OnProgress(1);
-            ((IUpdater)this).OnMessage("更新完成");
+            OverrideLocalVersionListUseTmp();
 
-            var version = VersionList.LoadVersionOnly(m_SavePath + VersionControl.k_VersionFileName);
-            if (version > new System.Version("0"))
+            var localVersionListPath = GetLocalVersionListPath();
+            var version = VersionList.LoadVersionOnly(localVersionListPath);
+            if (version != null)
             {
                 ((IUpdater)this).OnVersion(version.ToString());
             }
+            else
+            {
+                throw new Exception("Local VersionList is invalid.");
+            }
+
+            ((IUpdater)this).OnProgress(1);
+            ((IUpdater)this).OnMessage("更新完成");
 
             // TODO 加载主界面
         }
@@ -317,6 +352,56 @@ namespace Saro.XAsset.Update
 #else
             Application.Quit();
 #endif
+        }
+
+        private bool PrepareDownloads(VersionList remoteVersionList, VersionList localVersionList)
+        {
+            if (!remoteVersionList.IsValid()) throw new Exception("RemoteVersionList is invalid.");
+
+            bool hasNew = false;
+            var remoteAssetInfos = remoteVersionList.versionAssetInfos;
+            foreach (var item in remoteAssetInfos)
+            {
+                if (localVersionList != null && localVersionList.versionAssetInfos.TryGetValue(item.Key, out var assetInfo))
+                {
+                    if (assetInfo.IsNew(item.Value))
+                    {
+                        if (!hasNew) hasNew = true;
+                        AddDownload(item.Value);
+                    }
+                }
+                else
+                {
+                    if (!hasNew) hasNew = true;
+                    AddDownload(item.Value);
+                }
+            }
+
+            //Debug.LogError(string.Join("\n", m_Downloader.Downloads));
+
+            return hasNew;
+        }
+
+        private void AddDownload(VersionAssetInfo item)
+        {
+            m_Downloader.AddDownload(GetDownloadURL(item.pack), item.file, m_DlcPath + item.file, item.hash, item.offset, item.length);
+        }
+
+        #region Path
+
+        private string GetDownloadURL(string fileName)
+        {
+            return string.Format("{0}{1}/{2}", m_BaseURL, GetPlatformForAssetBundles(Application.platform), fileName);
+        }
+
+        private static string GetDlcPath()
+        {
+            return string.Format("{0}/DLC/", Application.persistentDataPath);
+        }
+
+        private static string GetBasePath()
+        {
+            return GetStreamingAssetsPath() + "/" + GetPlatformForAssetBundles(Application.platform) + "/";
         }
 
         private static string GetStreamingAssetsPath()
@@ -335,25 +420,66 @@ namespace Saro.XAsset.Update
             return "file://" + Application.streamingAssetsPath;
         }
 
-        private void PrepareDownloads()
+        private static string GetPlatformForAssetBundles(RuntimePlatform target)
         {
-            var assetInfos = m_RemoteVersionList.versionAssetInfos;
-            foreach (var item in assetInfos)
+            switch (target)
             {
-                AddDownload(item.Value);
+                case RuntimePlatform.Android:
+                    return "Android";
+                case RuntimePlatform.IPhonePlayer:
+                    return "iOS";
+                case RuntimePlatform.WindowsPlayer:
+                case RuntimePlatform.WindowsEditor:
+                    return "Windows";
+                case RuntimePlatform.OSXEditor:
+                case RuntimePlatform.OSXPlayer:
+                    return "iOS"; // OSX
+                case RuntimePlatform.WebGLPlayer:
+                    return "WebGL";
+                default:
+                    return null;
             }
         }
 
-        private void AddDownload(VersionAssetInfo item)
+        private string GetBaseVersionListPath()
         {
-            m_Downloader.AddDownload(GetDownloadURL(item.name), item.name, m_SavePath + item.name, item.hash, item.length);
+            return m_BasePath + VersionList.k_VersionFileName;
         }
 
-        private string GetDownloadURL(string k_VersionFileName)
+        private string GetTmpLocalVersionListPath()
         {
-            return string.Format("{0}{1}/{2}", m_BaseURL, m_Platform, k_VersionFileName);
+            return m_DlcPath + VersionList.k_VersionFileName + ".tmp";
         }
 
+        private string GetLocalVersionListPath()
+        {
+            return m_DlcPath + VersionList.k_VersionFileName;
+        }
+
+        private bool OverrideLocalVersionListUseTmp()
+        {
+            var tmp = GetTmpLocalVersionListPath();
+            var dest = GetLocalVersionListPath();
+
+            try
+            {
+                if (File.Exists(tmp))
+                {
+                    File.Copy(tmp, dest, true);
+                    return true;
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.LogError(e);
+            }
+
+            return false;
+        }
+
+        #endregion
+
+        #region Interface
 
         void IUpdater.OnClear()
         {
@@ -363,8 +489,6 @@ namespace Saro.XAsset.Update
             m_Downloader.Clear();
             m_Step = EStep.Wait;
             m_NetReachabilityChanged = false;
-            m_LoacalVersionList = null;
-            m_RemoteVersionList = null;
 
             XAsset.Get().Clear();
 
@@ -373,9 +497,9 @@ namespace Saro.XAsset.Update
                 Listener.OnClear();
             }
 
-            if (Directory.Exists(m_SavePath))
+            if (Directory.Exists(m_DlcPath))
             {
-                Directory.Delete(m_SavePath, true);
+                Directory.Delete(m_DlcPath, true);
             }
         }
 
@@ -458,5 +582,7 @@ namespace Saro.XAsset.Update
                 UIDialogue.CloseAll();
             }
         }
+
+        #endregion
     }
 }

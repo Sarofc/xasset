@@ -1,3 +1,4 @@
+using Saro.Utility;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -11,7 +12,7 @@ namespace Saro.XAsset
         Hash,
     }
 
-    public static class Version
+    public static class Versions
     {
         public const string Dataname = "dat.bytes";
         public const string VersionFileName = "ver.bytes";
@@ -72,7 +73,7 @@ namespace Saro.XAsset
             {
                 using (var fs = File.OpenRead(outputPath + "/" + file))
                 {
-                    disk.AddFile(file, fs.Length, Utility.GetCRC32Hash(fs));
+                    disk.AddFile(file, fs.Length, HashUtility.GetCRC32Hash(fs));
                 }
             }
 
@@ -86,7 +87,7 @@ namespace Saro.XAsset
                 writer.Write(disk.files.Count + 1);
                 using (var fs = File.OpenRead(dataPath))
                 {
-                    var file = new VFile { name = Dataname, length = fs.Length, hash = Utility.GetCRC32Hash(fs) };
+                    var file = new VFile { name = Dataname, length = fs.Length, hash = HashUtility.GetCRC32Hash(fs) };
                     file.Serialize(writer);
                 }
                 foreach (var file in disk.files)
@@ -197,7 +198,7 @@ namespace Saro.XAsset
                 }
                 if (verifyBy != VerifyBy.Hash)
                     return false;
-                return !Utility.GetCRC32Hash(stream).Equals(hash, StringComparison.OrdinalIgnoreCase);
+                return !HashUtility.GetCRC32Hash(stream).Equals(hash, StringComparison.OrdinalIgnoreCase);
             }
         }
     }

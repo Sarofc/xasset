@@ -11,6 +11,8 @@ namespace Saro.XAsset.Update
 
         public string Error { get; private set; }
 
+        public long Offset { get; set; }
+
         public long Length { get; set; }
 
         public string Hash { get; set; }
@@ -25,14 +27,14 @@ namespace Saro.XAsset.Update
         {
             get
             {
-                var dir = Path.GetDirectoryName(savePath);
+                var dir = Path.GetDirectoryName(SavePath);
                 return string.Format("{0}/{1}", dir, Hash);
             }
         }
 
         public bool Finished { get; private set; }
 
-        public string savePath;
+        public string SavePath { get; set; }
 
         public Action<Download> Completed { get; set; }
 
@@ -56,6 +58,7 @@ namespace Saro.XAsset.Update
 
             m_Stream.Write(buffer, 0, dataLength);
             Position += dataLength;
+
             return m_Running;
         }
 
@@ -66,7 +69,7 @@ namespace Saro.XAsset.Update
 
         public override string ToString()
         {
-            return string.Format("{0}, size:{1}, hash:{2}", Url, Length, Hash);
+            return string.Format("{0}, size:{1}, hash:{2}, offset:{3}", Url, Length, Hash, Offset);
         }
 
         public void Start()
@@ -85,7 +88,7 @@ namespace Saro.XAsset.Update
             {
                 m_Stream.Seek(Position, SeekOrigin.Begin);
                 m_Request = UnityWebRequest.Get(Url);
-                m_Request.SetRequestHeader("Range", "bytes=" + Position + "-");
+                m_Request.SetRequestHeader("Range", "bytes=" + (Offset + Position) + "-" + (Offset + Length - 1));
                 m_Request.downloadHandler = this;
                 m_Request.SendWebRequest();
                 Debug.Log("Start Download：" + Url);
@@ -137,10 +140,10 @@ namespace Saro.XAsset.Update
             {
                 return;
             }
-            CheckError();
+            CheckFile();
         }
 
-        private void CheckError()
+        private void CheckFile()
         {
             if (File.Exists(TempPath))
             {
@@ -153,14 +156,14 @@ namespace Saro.XAsset.Update
                             Error = "下载文件长度异常:" + fs.Length;
                         }
 
-                        if (VersionControl.s_VerifyBy == VersionControl.EVerifyBy.Crc32)
+                        if (VersionList.s_VerifyBy == VersionList.EVerifyBy.Crc32)
                         {
-                            if (!Hash.Equals(Utility.GetCRC32Hash(fs), StringComparison.OrdinalIgnoreCase))
+                            if (!Hash.Equals(Utility.HashUtility.GetCRC32Hash(fs), StringComparison.OrdinalIgnoreCase))
                             {
                                 Error = $"下载文件异常. name: {TempPath} hash: {Hash}";
                             }
                         }
-                        else if (VersionControl.s_VerifyBy == VersionControl.EVerifyBy.Md5)
+                        else if (VersionList.s_VerifyBy == VersionList.EVerifyBy.Md5)
                         {
                             throw new NotImplementedException("md5");
                         }
@@ -168,7 +171,7 @@ namespace Saro.XAsset.Update
                 }
                 if (string.IsNullOrEmpty(Error))
                 {
-                    File.Copy(TempPath, savePath, true);
+                    File.Copy(TempPath, SavePath, true);
                     File.Delete(TempPath);
                     Debug.Log("Complete Download：" + Url);
                     if (Completed == null)
@@ -200,8 +203,9 @@ namespace Saro.XAsset.Update
                 Id = Id,
                 Hash = Hash,
                 Url = Url,
+                Offset = Offset,
                 Length = Length,
-                savePath = savePath,
+                SavePath = SavePath,
                 Completed = Completed,
                 Name = Name
             };

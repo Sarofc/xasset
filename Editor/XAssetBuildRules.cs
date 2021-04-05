@@ -4,7 +4,7 @@ using System.IO;
 using UnityEditor;
 using UnityEngine;
 
-namespace Saro.XAsset
+namespace Saro.XAsset.Build
 {
     public enum ENameBy
     {
@@ -69,41 +69,44 @@ namespace Saro.XAsset
 
     public class XAssetBuildRules : ScriptableObject
     {
-        private readonly Dictionary<string, string> _asset2Bundles = new Dictionary<string, string>(StringComparer.Ordinal);
-        private readonly Dictionary<string, string[]> _conflicted = new Dictionary<string, string[]>(StringComparer.Ordinal);
-        private readonly List<string> _duplicated = new List<string>();
-        private readonly Dictionary<string, HashSet<string>> _tracker = new Dictionary<string, HashSet<string>>(StringComparer.Ordinal);
+        private readonly Dictionary<string, string> m_Asset2Bundles = new Dictionary<string, string>(StringComparer.Ordinal);
+        private readonly Dictionary<string, string[]> m_Conflicted = new Dictionary<string, string[]>(StringComparer.Ordinal);
+        private readonly List<string> m_Duplicated = new List<string>();
+        private readonly Dictionary<string, HashSet<string>> m_Tracker = new Dictionary<string, HashSet<string>>(StringComparer.Ordinal);
         [Header("Patterns")]
-        public string searchPatternAsset = "*.asset";
-        public string searchPatternController = "*.controller";
-        public string searchPatternDir = "*";
-        public string searchPatternMaterial = "*.mat";
-        public string searchPatternPng = "*.png";
-        public string searchPatternPrefab = "*.prefab";
-        public string searchPatternScene = "*.unity";
-        public string searchPatternText = "*.txt,*.bytes,*.json,*.csv,*.xml,*htm,*.html,*.yaml,*.fnt";
-        public static bool nameByHash = true;
+        [Attributes.ReadOnly] public string searchPatternAsset = "*.asset";
+        [Attributes.ReadOnly] public string searchPatternController = "*.controller";
+        [Attributes.ReadOnly] public string searchPatternDir = "*";
+        [Attributes.ReadOnly] public string searchPatternMaterial = "*.mat";
+        [Attributes.ReadOnly] public string searchPatternPng = "*.png";
+        [Attributes.ReadOnly] public string searchPatternPrefab = "*.prefab";
+        [Attributes.ReadOnly] public string searchPatternScene = "*.unity";
+        [Attributes.ReadOnly] public string searchPatternText = "*.txt,*.bytes,*.json,*.csv,*.xml,*htm,*.html,*.yaml,*.fnt";
+        public bool nameByHash = true;
 
         [Tooltip("构建的版本号")]
         [Header("Builds")]
-        public int version;
+        public string version = "0.0.0";
 
-        [Tooltip("BuildPlayer 的时候被打包的场景")] 
+        [Tooltip("BuildPlayer 的时候被打包的场景")]
         public SceneAsset[] scenesInBuild = new SceneAsset[0];
 
         public BuildRule[] rules = new BuildRule[0];
-        
-        [HideInInspector] public RuleAsset[] ruleAssets = new RuleAsset[0];
-        [HideInInspector] public RuleBundle[] ruleBundles = new RuleBundle[0];
+
+        [Attributes.ReadOnly] public RuleAsset[] ruleAssets = new RuleAsset[0];
+        [Attributes.ReadOnly] public RuleBundle[] ruleBundles = new RuleBundle[0];
 
         #region API
 
-        public int AddVersion()
+        public Version AddVersion()
         {
-            version++;
+            var versionObj = new Version(version);
+            var revision = versionObj.Revision + 1;
+            versionObj = new Version(versionObj.Major, versionObj.Minor, versionObj.Build, revision);
+            version = versionObj.ToString();
             EditorUtility.SetDirty(this);
             AssetDatabase.SaveAssets();
-            return version;
+            return versionObj;
         }
 
         public void Apply()
@@ -142,16 +145,16 @@ namespace Saro.XAsset
             return ext != ".dll" && ext != ".cs" && ext != ".meta" && ext != ".js" && ext != ".boo";
         }
 
-        private static bool IsScene(string asset)
+        private bool IsScene(string asset)
         {
             return asset.EndsWith(".unity");
         }
 
-        private static string RuledAssetBundleName(string name)
+        private string RuledAssetBundleName(string name)
         {
             if (nameByHash)
             {
-                return Utility.GetMD5Hash(name) + XAsset.k_AssetExtension;
+                return Utility.HashUtility.GetMD5Hash(name) + XAsset.k_AssetExtension;
             }
             return name.Replace("\\", "/").ToLower() + XAsset.k_AssetExtension;
         }
@@ -159,20 +162,20 @@ namespace Saro.XAsset
         private void Track(string asset, string bundle)
         {
             HashSet<string> assets;
-            if (!_tracker.TryGetValue(asset, out assets))
+            if (!m_Tracker.TryGetValue(asset, out assets))
             {
                 assets = new HashSet<string>();
-                _tracker.Add(asset, assets);
+                m_Tracker.Add(asset, assets);
             }
 
             assets.Add(bundle);
             if (assets.Count > 1)
             {
                 string bundleName;
-                _asset2Bundles.TryGetValue(asset, out bundleName);
+                m_Asset2Bundles.TryGetValue(asset, out bundleName);
                 if (string.IsNullOrEmpty(bundleName))
                 {
-                    _duplicated.Add(asset);
+                    m_Duplicated.Add(asset);
                 }
             }
         }
@@ -180,7 +183,7 @@ namespace Saro.XAsset
         private Dictionary<string, List<string>> GetBundles()
         {
             var bundles = new Dictionary<string, List<string>>(StringComparer.Ordinal);
-            foreach (var item in _asset2Bundles)
+            foreach (var item in m_Asset2Bundles)
             {
                 var bundle = item.Value;
                 List<string> list;
@@ -198,10 +201,10 @@ namespace Saro.XAsset
 
         private void Clear()
         {
-            _tracker.Clear();
-            _duplicated.Clear();
-            _conflicted.Clear();
-            _asset2Bundles.Clear();
+            m_Tracker.Clear();
+            m_Duplicated.Clear();
+            m_Conflicted.Clear();
+            m_Asset2Bundles.Clear();
         }
 
         private void Save()
@@ -226,21 +229,21 @@ namespace Saro.XAsset
 
         private void OptimizeAssets()
         {
-            int i = 0, max = _conflicted.Count;
-            foreach (var item in _conflicted)
+            int i = 0, max = m_Conflicted.Count;
+            foreach (var item in m_Conflicted)
             {
                 if (EditorUtility.DisplayCancelableProgressBar(string.Format("优化冲突{0}/{1}", i, max), item.Key,
                     i / (float)max)) break;
                 var list = item.Value;
                 foreach (var asset in list)
                     if (!IsScene(asset))
-                        _duplicated.Add(asset);
+                        m_Duplicated.Add(asset);
                 i++;
             }
 
-            for (i = 0, max = _duplicated.Count; i < max; i++)
+            for (i = 0, max = m_Duplicated.Count; i < max; i++)
             {
-                var item = _duplicated[i];
+                var item = m_Duplicated[i];
                 if (EditorUtility.DisplayCancelableProgressBar(string.Format("优化冗余{0}/{1}", i, max), item,
                     i / (float)max)) break;
                 OptimizeAsset(item);
@@ -258,7 +261,7 @@ namespace Saro.XAsset
                     i / (float)max)) break;
                 var assetPaths = getBundles[bundle];
                 if (assetPaths.Exists(IsScene) && !assetPaths.TrueForAll(IsScene))
-                    _conflicted.Add(bundle, assetPaths.ToArray());
+                    m_Conflicted.Add(bundle, assetPaths.ToArray());
                 var dependencies = AssetDatabase.GetDependencies(assetPaths.ToArray(), true);
                 if (dependencies.Length > 0)
                     foreach (var asset in dependencies)
@@ -280,7 +283,7 @@ namespace Saro.XAsset
             }
 
             var list = new List<RuleAsset>();
-            foreach (var item in _asset2Bundles)
+            foreach (var item in m_Asset2Bundles)
                 list.Add(new RuleAsset
                 {
                     path = item.Key,
@@ -293,9 +296,9 @@ namespace Saro.XAsset
         private void OptimizeAsset(string asset)
         {
             if (asset.EndsWith(".shader"))
-                _asset2Bundles[asset] = RuledAssetBundleName("shaders");
+                m_Asset2Bundles[asset] = RuledAssetBundleName("shaders");
             else
-                _asset2Bundles[asset] = RuledAssetBundleName(asset);
+                m_Asset2Bundles[asset] = RuledAssetBundleName(asset);
         }
 
         private void ApplyRule(BuildRule rule)
@@ -308,20 +311,20 @@ namespace Saro.XAsset
             {
                 case ENameBy.Explicit:
                     {
-                        foreach (var asset in assets) _asset2Bundles[asset] = RuledAssetBundleName(rule.assetBundleName);
+                        foreach (var asset in assets) m_Asset2Bundles[asset] = RuledAssetBundleName(rule.assetBundleName);
 
                         break;
                     }
                 case ENameBy.Path:
                     {
-                        foreach (var asset in assets) _asset2Bundles[asset] = RuledAssetBundleName(asset);
+                        foreach (var asset in assets) m_Asset2Bundles[asset] = RuledAssetBundleName(asset);
 
                         break;
                     }
                 case ENameBy.Directory:
                     {
                         foreach (var asset in assets)
-                            _asset2Bundles[asset] = RuledAssetBundleName(Path.GetDirectoryName(asset));
+                            m_Asset2Bundles[asset] = RuledAssetBundleName(Path.GetDirectoryName(asset));
 
                         break;
                     }
@@ -338,7 +341,7 @@ namespace Saro.XAsset
                                     if (pos != -1) dir = dir.Substring(0, pos);
                                 }
 
-                            _asset2Bundles[asset] = RuledAssetBundleName(dir);
+                            m_Asset2Bundles[asset] = RuledAssetBundleName(dir);
                         }
 
                         break;

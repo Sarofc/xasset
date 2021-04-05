@@ -1,20 +1,21 @@
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace Saro.XAsset
+namespace Saro.XAsset.Update
 {
-    public class UpdateScreen : MonoBehaviour, Update.IUpdater
+    public class UpdateScreen : MonoBehaviour, IUpdater
     {
-        public Text version;
-        public Slider progressBar;
-        public Text progressText;
-        public Button buttonStart;
+        [SerializeField] private Text version;
+        [SerializeField] private Slider progressBar;
+        [SerializeField] private Text progressText;
+        [SerializeField] private Button buttonStart;
+        [SerializeField] private AssetUpdater resourceUpdater;
+
 
         private void Start()
         {
-            version.text = "APP: 4.0\nRES：1";
-            var updater = GetComponent<Updater>();
-            updater.listener = this;
+            version.text = "Ver 0.0.0.1";
+            resourceUpdater.Listener = this;
         }
 
         #region IUpdater implementation
@@ -36,9 +37,8 @@ namespace Saro.XAsset
 
         public void OnVersion(string ver)
         {
-            version.text = "APP: 4.0\nRES: " + ver;
+            version.text = "Ver " + ver;
         }
-
 
         public void OnClear()
         {

@@ -29,6 +29,17 @@ namespace Saro.XAsset
             Log.INFO("XAsset", msg);
         }
 
+        //[System.Diagnostics.Conditional("DEBUG_XASSET")]
+        private void WARN(string msg)
+        {
+            Log.WARN("XAsset", msg);
+        }
+
+        private void ERROR(string msg)
+        {
+            Log.ERROR("XAsset", msg);
+        }
+
         internal static XAsset Get()
         {
             return (XAsset)MainLocator.Get().Resolve<IAssetMgr>(true);
@@ -81,7 +92,7 @@ namespace Saro.XAsset
         {
             if (string.IsNullOrEmpty(path))
             {
-                Debug.LogError("invalid path");
+                ERROR("invalid path");
                 return null;
             }
 
@@ -187,7 +198,7 @@ namespace Saro.XAsset
                 }
                 else
                 {
-                    Debug.LogError(string.Format("{0} bundle {1} not exist.", path, item.bundle));
+                    ERROR(string.Format("{0} bundle {1} not exist.", path, item.bundle));
                 }
             }
         }
@@ -254,7 +265,7 @@ namespace Saro.XAsset
         {
             if (string.IsNullOrEmpty(path))
             {
-                Debug.LogError("invalid path");
+                ERROR("invalid path");
                 return null;
             }
 
@@ -326,7 +337,7 @@ namespace Saro.XAsset
                         return existPath;
                 }
 
-                Debug.LogError("找不到资源路径" + path);
+                ERROR("找不到资源路径" + path);
                 return path;
             }
 #endif
@@ -340,13 +351,13 @@ namespace Saro.XAsset
                     return existPath;
             }
 
-            Debug.LogError("资源没有收集打包" + path);
+            ERROR("资源没有收集打包" + path);
             return path;
         }
 
         #endregion
 
-       
+
         #region Bundles
 
         private const int k_MAX_BUNDLES_PERFRAME = 0;
@@ -420,47 +431,47 @@ namespace Saro.XAsset
         {
             if (string.IsNullOrEmpty(assetBundleName))
             {
-                Debug.LogError("assetBundleName == null");
+                ERROR("assetBundleName == null");
                 return null;
             }
 
             assetBundleName = RemapVariantName(assetBundleName);
             var url = GetDataPath(assetBundleName) + assetBundleName;
 
-            if (m_UrlToBundles.TryGetValue(url, out BundleRequest bundle))
+            if (m_UrlToBundles.TryGetValue(url, out BundleRequest bundleRequest))
             {
-                bundle.Update();
-                bundle.Retain();
-                m_LoadingBundles.Add(bundle);
-                return bundle;
+                bundleRequest.Update();
+                bundleRequest.Retain();
+                m_LoadingBundles.Add(bundleRequest);
+                return bundleRequest;
             }
 
             if (url.StartsWith("http://", StringComparison.Ordinal) ||
                 url.StartsWith("https://", StringComparison.Ordinal) ||
                 url.StartsWith("file://", StringComparison.Ordinal) ||
                 url.StartsWith("ftp://", StringComparison.Ordinal))
-                bundle = new WebBundleRequest();
+                bundleRequest = new WebBundleRequest();
             else
-                bundle = asyncMode ? new BundleAsyncRequest() : new BundleRequest();
+                bundleRequest = asyncMode ? new BundleAsyncRequest() : new BundleRequest();
 
-            bundle.Url = url;
-            m_UrlToBundles.Add(url, bundle);
+            bundleRequest.Url = url;
+            m_UrlToBundles.Add(url, bundleRequest);
 
-            if (k_MAX_BUNDLES_PERFRAME > 0 && (bundle is BundleAsyncRequest || bundle is WebBundleRequest))
+            if (k_MAX_BUNDLES_PERFRAME > 0 && (bundleRequest is BundleAsyncRequest || bundleRequest is WebBundleRequest))
             {
-                m_ToloadBundles.Add(bundle);
+                m_ToloadBundles.Add(bundleRequest);
             }
             else
             {
-                bundle.Load();
-                m_LoadingBundles.Add(bundle);
+                bundleRequest.Load();
+                m_LoadingBundles.Add(bundleRequest);
                 INFO("LoadBundle: " + url);
             }
 
-            LoadDependencies(bundle, assetBundleName, asyncMode);
+            LoadDependencies(bundleRequest, assetBundleName, asyncMode);
 
-            bundle.Retain();
-            return bundle;
+            bundleRequest.Retain();
+            return bundleRequest;
         }
 
         private string GetDataPath(string bundleName)
@@ -552,9 +563,10 @@ namespace Saro.XAsset
             }
 
             if (bestFit == int.MaxValue - 1)
-                Debug.LogWarning(
-                    "Ambiguous asset bundle variant chosen because there was no matching active variant: " +
-                    bundlesWithVariant[bestFitIndex]);
+            {
+                WARN("Ambiguous asset bundle variant chosen because there was no matching active variant: " +
+                   bundlesWithVariant[bestFitIndex]);
+            }   
 
             return bestFitIndex != -1 ?
                 bundlesWithVariant[bestFitIndex] :
@@ -612,14 +624,14 @@ namespace Saro.XAsset
             }
             else
             {
-                Debug.LogError("[XAsset] Initialize Error");
+                ERROR("[XAsset] Initialize Error");
             }
             init.Release();
 
-            //Debug.LogError("all asset path: ");
+            //ERROR("all asset path: ");
             //foreach (var path in GetAllAssetPaths())
             //{
-            //    Debug.LogError("\t" + path);
+            //    ERROR("\t" + path);
             //}
 
             Processor.onUpdate -= Update;

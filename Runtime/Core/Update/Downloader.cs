@@ -12,7 +12,7 @@ namespace Saro.XAsset.Update
         public int maxDownloads = 3;
 
         private readonly List<Download> m_Downloads = new List<Download>();
-        private readonly List<Download> m_Tostart = new List<Download>();
+        private readonly List<Download> m_ToStart = new List<Download>();
         private readonly List<Download> m_Progressing = new List<Download>();
         public Action<long, long, float> onUpdate;
         public Action onFinished;
@@ -43,12 +43,12 @@ namespace Saro.XAsset.Update
             return downloadSize - (len - Size);
         }
 
-        private bool _started;
+        private bool m_Started;
         [SerializeField] private float sampleTime = 0.5f;
 
         public void StartDownload()
         {
-            m_Tostart.Clear();
+            m_ToStart.Clear();
             m_FinishedIndex = 0;
             m_LastSize = 0L;
             Restart();
@@ -58,20 +58,20 @@ namespace Saro.XAsset.Update
         {
             m_StartTime = Time.realtimeSinceStartup;
             m_LastTime = 0;
-            _started = true;
+            m_Started = true;
             m_DownloadIndex = m_FinishedIndex;
             var max = Math.Min(m_Downloads.Count, maxDownloads);
             for (var i = m_FinishedIndex; i < max; i++)
             {
                 var item = m_Downloads[i];
-                m_Tostart.Add(item);
+                m_ToStart.Add(item);
                 m_DownloadIndex++;
             }
         }
 
         public void Stop()
         {
-            m_Tostart.Clear();
+            m_ToStart.Clear();
             foreach (var download in m_Progressing)
             {
                 download.Complete(true);
@@ -79,7 +79,7 @@ namespace Saro.XAsset.Update
 
             }
             m_Progressing.Clear();
-            _started = false;
+            m_Started = false;
         }
 
         public void Clear()
@@ -92,17 +92,17 @@ namespace Saro.XAsset.Update
             m_LastTime = 0f;
             m_LastSize = 0L;
             m_StartTime = 0;
-            _started = false;
+            m_Started = false;
             foreach (var item in m_Progressing)
             {
                 item.Complete(true);
             }
             m_Progressing.Clear();
             m_Downloads.Clear();
-            m_Tostart.Clear();
+            m_ToStart.Clear();
         }
 
-        public void AddDownload(string url, string filename, string savePath, string hash, long len)
+        public void AddDownload(string url, string filename, string savePath, string hash, long offset, long length)
         {
             var download = new Download
             {
@@ -110,19 +110,20 @@ namespace Saro.XAsset.Update
                 Url = url,
                 Name = filename,
                 Hash = hash,
-                Length = len,
-                savePath = savePath,
+                Offset = offset,
+                Length = length,
+                SavePath = savePath,
                 Completed = OnFinished
             };
             m_Downloads.Add(download);
             var info = new FileInfo(download.TempPath);
             if (info.Exists)
             {
-                Size += len - info.Length;
+                Size += length - info.Length;
             }
             else
             {
-                Size += len;
+                Size += length;
             }
         }
 
@@ -130,7 +131,7 @@ namespace Saro.XAsset.Update
         {
             if (m_DownloadIndex < m_Downloads.Count)
             {
-                m_Tostart.Add(m_Downloads[m_DownloadIndex]);
+                m_ToStart.Add(m_Downloads[m_DownloadIndex]);
                 m_DownloadIndex++;
             }
             m_FinishedIndex++;
@@ -141,7 +142,7 @@ namespace Saro.XAsset.Update
             {
                 onFinished.Invoke();
             }
-            _started = false;
+            m_Started = false;
         }
 
         public static string GetDisplaySpeed(float downloadSpeed)
@@ -173,16 +174,16 @@ namespace Saro.XAsset.Update
 
         private void Update()
         {
-            if (!_started)
+            if (!m_Started)
                 return;
 
-            if (m_Tostart.Count > 0)
+            if (m_ToStart.Count > 0)
             {
-                for (var i = 0; i < Math.Min(maxDownloads, m_Tostart.Count); i++)
+                for (var i = 0; i < Math.Min(maxDownloads, m_ToStart.Count); i++)
                 {
-                    var item = m_Tostart[i];
+                    var item = m_ToStart[i];
                     item.Start();
-                    m_Tostart.RemoveAt(i);
+                    m_ToStart.RemoveAt(i);
                     m_Progressing.Add(item);
                     i--;
                 }

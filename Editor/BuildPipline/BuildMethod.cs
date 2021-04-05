@@ -35,7 +35,7 @@ namespace Saro.XAsset
             var methods = type.GetMethods(BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public);
             foreach (var method in methods)
             {
-                var attr = method.GetCustomAttribute<BuildMethodAttribute>();
+                var attr = method.GetCustomAttribute<XAssetBuildMethodAttribute>();
                 if (attr != null)
                 {
                     var buildMethod = new BuildMethod()
@@ -72,13 +72,13 @@ namespace Saro.XAsset
         }
     }
 
-    public sealed class BuildMethodAttribute : Attribute
+    public sealed class XAssetBuildMethodAttribute : Attribute
     {
         public int order;
         public string description;
         public bool required;
 
-        public BuildMethodAttribute(int order, string description, bool required = true)
+        public XAssetBuildMethodAttribute(int order, string description, bool required = true)
         {
             this.order = order;
             this.description = description;

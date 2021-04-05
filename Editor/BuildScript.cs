@@ -8,9 +8,10 @@ namespace Saro.XAsset.Build
 {
     public static class BuildScript
     {
-        public static string outputPath = "ExtraResources/Res/" + GetPlatformName();
+        public static string s_OutputFolder = "ExtraResources/DLC/" + GetPlatformName();
+        public static string s_DatFolder = s_OutputFolder + "/Dat";
 
-        public static void ClearAssetBundles()
+        public static void ClearAssetBundleNames()
         {
             var allAssetBundleNames = AssetDatabase.GetAllAssetBundleNames();
             for (var i = 0; i < allAssetBundleNames.Length; i++)
@@ -30,120 +31,24 @@ namespace Saro.XAsset.Build
         {
             var rules = GetXAssetBuildRules();
             rules.Apply();
-
-            //var builds = rules.GetBuilds();
-
-            //Debug.LogError("rule's builds: " + builds.Length);
-
-            //var outputPath = CreateAssetBundleDirectory();
-            //const BuildAssetBundleOptions options = BuildAssetBundleOptions.ChunkBasedCompression;
-            //var targetPlatform = EditorUserBuildSettings.activeBuildTarget;
-
-            //var assetBundleManifest = BuildPipeline.BuildAssetBundles(outputPath, builds, options, targetPlatform);
-            //if (assetBundleManifest == null)
-            //{
-            //    return;
-            //}
-            //var manifest = GetManifest();
-            //var dirs = new List<string>();
-            //var assets = new List<AssetRef>();
-            //var bundles = assetBundleManifest.GetAllAssetBundles();
-            //var bundle2Ids = new Dictionary<string, int>();
-            //for (var index = 0; index < bundles.Length; index++)
-            //{
-            //    var bundle = bundles[index];
-            //    bundle2Ids[bundle] = index;
-            //}
-
-            //var bundleRefs = new List<BundleRef>();
-            //for (var index = 0; index < bundles.Length; index++)
-            //{
-            //    var bundle = bundles[index];
-            //    var deps = assetBundleManifest.GetAllDependencies(bundle);
-            //    var path = string.Format("{0}/{1}", outputPath, bundle);
-            //    if (File.Exists(path))
-            //    {
-            //        using (var stream = File.OpenRead(path))
-            //        {
-            //            bundleRefs.Add(new BundleRef
-            //            {
-            //                name = bundle,
-            //                id = index,
-            //                deps = Array.ConvertAll(deps, input => bundle2Ids[input]),
-            //                len = stream.Length,
-            //                hash = assetBundleManifest.GetAssetBundleHash(bundle).ToString(),
-            //            });
-            //        }
-            //    }
-            //    else
-            //    {
-            //        Debug.LogError(path + " file not exsit.");
-            //    }
-            //}
-
-            //for (var i = 0; i < rules.ruleAssets.Length; i++)
-            //{
-            //    var item = rules.ruleAssets[i];
-            //    var path = item.path;
-            //    var dir = Path.GetDirectoryName(path).Replace("\\", "/");
-            //    var index = dirs.FindIndex(o => o.Equals(dir));
-            //    if (index == -1)
-            //    {
-            //        index = dirs.Count;
-            //        dirs.Add(dir);
-            //    }
-
-            //    var asset = new AssetRef { bundle = bundle2Ids[item.bundle], dir = index, name = Path.GetFileName(path) };
-            //    assets.Add(asset);
-            //}
-
-            //manifest.dirs = dirs.ToArray();
-            //manifest.assets = assets.ToArray();
-            //manifest.bundles = bundleRefs.ToArray();
-
-            //EditorUtility.SetDirty(manifest);
-            //AssetDatabase.SaveAssets();
-            //AssetDatabase.Refresh();
         }
 
-        public static void CopyAssetBundlesTo(string path)
+        public static void CopyAssetBundlesTo(string destFolder)
         {
-            var files = new HashSet<string>
+            if (!Directory.Exists(destFolder))
             {
-                Version.Dataname,
-                Version.VersionFileName,
-            };
-            if (!Directory.Exists(path))
-            {
-                Directory.CreateDirectory(path);
+                Directory.CreateDirectory(destFolder);
             }
 
-            //if (GetSettings().enableVFS)
-            //{
-            //    foreach (var item in files)
-            //    {
-            //        var src = outputPath + "/" + item;
-            //        var dest = Application.streamingAssetsPath + "/" + item;
-            //        if (File.Exists(src))
-            //        {
-            //            File.Copy(src, dest, true);
-            //        }
-            //    }
-            //}
-            //else
+            var files = Directory.GetFiles(s_DatFolder);
+            foreach (var src in files)
             {
-                var _files = Directory.GetFiles(outputPath);
-                foreach (var src in _files)
+                var fileName = Path.GetFileName(src);
+
+                var dest = Path.Combine(destFolder, fileName);
+                if (File.Exists(src))
                 {
-                    var fileName = Path.GetFileName(src);
-
-                    if (files.Contains(fileName)) continue;
-
-                    var dest = Application.streamingAssetsPath /*+ "/" + GetPlatformName()*/ + "/" + fileName;
-                    if (File.Exists(src))
-                    {
-                        File.Copy(src, dest, true);
-                    }
+                    File.Copy(src, dest, true);
                 }
             }
         }
@@ -229,29 +134,27 @@ namespace Saro.XAsset.Build
         public static string CreateAssetBundleDirectory()
         {
             // Choose the output path according to the build target.
-            if (!Directory.Exists(outputPath))
-                Directory.CreateDirectory(outputPath);
+            if (!Directory.Exists(s_OutputFolder))
+                Directory.CreateDirectory(s_OutputFolder);
 
-            return outputPath;
+            return s_OutputFolder;
         }
 
         public static void BuildAssetBundles()
         {
-            // Choose the output path according to the build target.
-            var outputPath = CreateAssetBundleDirectory();
-            //const BuildAssetBundleOptions options = BuildAssetBundleOptions.ChunkBasedCompression;
+            var outputFolder = CreateAssetBundleDirectory();
             var options = GetXAssetSettings().buildAssetBundleOptions;
 
             var targetPlatform = EditorUserBuildSettings.activeBuildTarget;
-            var rules = GetXAssetBuildRules();
-            var builds = rules.GetAssetBundleBuilds();
-            var assetBundleManifest = BuildPipeline.BuildAssetBundles(outputPath, builds, options, targetPlatform);
+            var xassetBuildRules = GetXAssetBuildRules();
+            var assetBundleBuilds = xassetBuildRules.GetAssetBundleBuilds();
+            var assetBundleManifest = BuildPipeline.BuildAssetBundles(outputFolder, assetBundleBuilds, options, targetPlatform);
             if (assetBundleManifest == null)
             {
                 return;
             }
 
-            var manifest = GetXAssetManifest();
+            var xassetManifest = GetXAssetManifest();
             var dirs = new List<string>();
             var assets = new List<AssetRef>();
             var bundles = assetBundleManifest.GetAllAssetBundles();
@@ -267,7 +170,7 @@ namespace Saro.XAsset.Build
             {
                 var bundle = bundles[index];
                 var deps = assetBundleManifest.GetAllDependencies(bundle);
-                var path = string.Format("{0}/{1}", outputPath, bundle);
+                var path = string.Format("{0}/{1}", outputFolder, bundle);
                 if (File.Exists(path))
                 {
                     using (var stream = File.OpenRead(path))
@@ -288,11 +191,12 @@ namespace Saro.XAsset.Build
                 }
             }
 
-            for (var i = 0; i < rules.ruleAssets.Length; i++)
+            for (var i = 0; i < xassetBuildRules.ruleAssets.Length; i++)
             {
-                var item = rules.ruleAssets[i];
+                var item = xassetBuildRules.ruleAssets[i];
                 var path = item.path;
                 var dir = Path.GetDirectoryName(path).Replace("\\", "/");
+
                 var index = dirs.FindIndex(o => o.Equals(dir));
                 if (index == -1)
                 {
@@ -304,24 +208,26 @@ namespace Saro.XAsset.Build
                 assets.Add(asset);
             }
 
-            manifest.dirs = dirs.ToArray();
-            manifest.assets = assets.ToArray();
-            manifest.bundles = bundleRefs.ToArray();
+            xassetManifest.dirs = dirs.ToArray();
+            xassetManifest.assets = assets.ToArray();
+            xassetManifest.bundles = bundleRefs.ToArray();
 
-            EditorUtility.SetDirty(manifest);
+            EditorUtility.SetDirty(xassetManifest);
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
 
             var manifestBundleName = "manifest.unity3d";
-            builds = new[] {
+            assetBundleBuilds = new[] {
                 new AssetBundleBuild {
-                    assetNames = new[] { AssetDatabase.GetAssetPath (manifest), },
+                    assetNames = new[] { AssetDatabase.GetAssetPath (xassetManifest), },
                     assetBundleName = manifestBundleName
                 }
             };
 
-            BuildPipeline.BuildAssetBundles(outputPath, builds, options, targetPlatform);
+            BuildPipeline.BuildAssetBundles(outputFolder, assetBundleBuilds, options, targetPlatform);
             ArrayUtility.Add(ref bundles, manifestBundleName);
+
+            Update.VersionList.BuildVersionList(outputFolder, s_DatFolder, bundles, GetXAssetBuildRules().AddVersion());
         }
 
         private static string GetBuildTargetName(BuildTarget target)
