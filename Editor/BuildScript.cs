@@ -194,7 +194,7 @@ namespace Saro.XAsset.Build
             for (var i = 0; i < xassetBuildRules.ruleAssets.Length; i++)
             {
                 var item = xassetBuildRules.ruleAssets[i];
-                var path = item.path;
+                var path = item.asset;
                 var dir = Path.GetDirectoryName(path).Replace("\\", "/");
 
                 var index = dirs.FindIndex(o => o.Equals(dir));

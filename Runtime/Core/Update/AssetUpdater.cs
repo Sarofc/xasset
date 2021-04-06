@@ -1,4 +1,5 @@
 
+using Saro.IO;
 using Saro.UI;
 using System;
 using System.Collections;
@@ -324,9 +325,80 @@ namespace Saro.XAsset.Update
 
         private void OnComplete()
         {
-            // TODO 合并文件
+            m_Step = EStep.Wait;
 
-            OverrideLocalVersionListUseTmp();
+            var downloads = m_Downloader.Downloads;
+            if (downloads.Count > 0)
+            {
+                //Debug.LogError("合并文件...");
+                // 合并文件
+                ((IUpdater)this).OnMessage("合并文件...");
+
+                var datPath = GetDlcPath() + VersionList.k_DatFileName;
+                var access = EVFileSystemAccess.ReadWrite;
+
+                CommonVFileSystemStream stream = null;
+                VFileSystem vfs = null;
+
+                try
+                {
+                    // create or load vfs
+                    // TODO 可以搞成跟 FileStream 一样的API,可以直接OpenOrCreate
+                    if (!File.Exists(datPath))
+                    {
+                        stream = new CommonVFileSystemStream(datPath, access, true);
+                        vfs = VFileSystem.Create(datPath, access, stream, 1024, 1024 * 32);
+                    }
+                    else
+                    {
+                        stream = new CommonVFileSystemStream(datPath, access, false);
+                        vfs = VFileSystem.Load(datPath, access, stream);
+                    }
+
+                    // wirte file
+                    for (int index = 0; index < downloads.Count; index++)
+                    {
+                        Download download = downloads[index];
+                        var fileName = download.Name;
+                        var filePath = download.SavePath;
+
+                        //if (vfs.HasFile(fileName))
+                        //{
+                        //    vfs.DeleteFile(fileName);
+                        //}
+
+                        if (!vfs.WriteFile(fileName, filePath))
+                        { }
+
+                        ((IUpdater)this).OnMessage($"正在合并文件: {index}/{downloads.Count}");
+                        ((IUpdater)this).OnProgress((float)index / downloads.Count);
+                    }
+
+                    // delete tmp files
+                    //for (int i = 0; i < downloads.Count; i++)
+                    //{
+                    //    File.Delete(downloads[i].SavePath);
+                    //}
+
+                    m_Downloader.Clear();
+                }
+                catch (IOException e)
+                {
+                    Debug.LogException(e);
+                }
+                catch (Exception e)
+                {
+                    Debug.LogException(e);
+                }
+                finally
+                {
+                    if (stream != null) stream.Dispose();
+                    if (vfs != null) vfs.Dispose();
+                }
+
+                //Debug.LogError("覆盖版本文件...");
+                OverrideLocalVersionListUseTmp();
+            }
 
             var localVersionListPath = GetLocalVersionListPath();
             var version = VersionList.LoadVersionOnly(localVersionListPath);
@@ -342,7 +414,34 @@ namespace Saro.XAsset.Update
             ((IUpdater)this).OnProgress(1);
             ((IUpdater)this).OnMessage("更新完成");
 
-            // TODO 加载主界面
+
+            // 重新初始化 XAssest
+            ((IUpdater)this).OnMessage("初始化资源管理器...");
+            ((IUpdater)this).OnProgress(0);
+
+            var initRequest = XAsset.Get().Initialize();
+            initRequest.Completed += (Core.IAssetRequest r) =>
+            {
+                r.Release();
+                if (!r.IsError)
+                {
+                    ((IUpdater)this).OnMessage("初始化成功!");
+                    ((IUpdater)this).OnProgress(1);
+
+                    var sceneRequest = XAsset.Get().LoadSceneAsync("Assets/Res/Scene/level-1.unity");
+                    sceneRequest.Completed += _r =>
+                    {
+                        //Debug.LogError("加载成功: " + _r.Asset.name);
+                    };
+                }
+                else
+                {
+                    UIDialogue.Show("提示", "初始化异常错误：" + r.Error + "请联系技术支持").onComplete += _ =>
+                    {
+                        Quit();
+                    };
+                }
+            };
         }
 
         private void Quit()

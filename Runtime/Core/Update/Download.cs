@@ -91,7 +91,7 @@ namespace Saro.XAsset.Update
                 m_Request.SetRequestHeader("Range", "bytes=" + (Offset + Position) + "-" + (Offset + Length - 1));
                 m_Request.downloadHandler = this;
                 m_Request.SendWebRequest();
-                Debug.Log("Start Download：" + Url);
+                Debug.Log("Start Download：" + this);
             }
             else
             {

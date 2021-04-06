@@ -88,7 +88,7 @@ namespace Saro.XAsset
 
         private SceneAssetRequest m_RunningSceneRequest;
 
-        public IAssetRequest LoadSceneAsync(string path, bool additive)
+        public IAssetRequest LoadSceneAsync(string path, bool additive = false)
         {
             if (string.IsNullOrEmpty(path))
             {
@@ -391,12 +391,12 @@ namespace Saro.XAsset
 
         internal BundleRequest LoadBundle(string assetBundleName)
         {
-            return LoadBundle(assetBundleName, false);
+            return LoadBundleInternal(assetBundleName, false);
         }
 
         internal BundleRequest LoadBundleAsync(string assetBundleName)
         {
-            return LoadBundle(assetBundleName, true);
+            return LoadBundleInternal(assetBundleName, true);
         }
 
         internal void UnloadBundle(BundleRequest bundle)
@@ -423,11 +423,11 @@ namespace Saro.XAsset
             for (var i = 0; i < dependencies.Length; i++)
             {
                 var item = dependencies[i];
-                bundle.Dependencies.Add(LoadBundle(item, asyncRequest));
+                bundle.Dependencies.Add(LoadBundleInternal(item, asyncRequest));
             }
         }
 
-        internal BundleRequest LoadBundle(string assetBundleName, bool asyncMode)
+        private BundleRequest LoadBundleInternal(string assetBundleName, bool asyncMode)
         {
             if (string.IsNullOrEmpty(assetBundleName))
             {
@@ -577,7 +577,7 @@ namespace Saro.XAsset
 
         #region Service
 
-        private ManifestRequest Initialize()
+        internal ManifestRequest Initialize()
         {
             if (string.IsNullOrEmpty(s_BasePath))
             {

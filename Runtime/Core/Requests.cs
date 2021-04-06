@@ -185,7 +185,7 @@ namespace Saro.XAsset
             if (XAsset.s_RuntimeMode)
             {
                 var assetBundleName = m_AssetName.Replace(".asset", ".unity3d").ToLower();
-                m_Request = XAsset.Get().LoadBundle(assetBundleName, true);
+                m_Request = XAsset.Get().LoadBundleAsync(assetBundleName);
                 m_Request.Completed = Request_completed;
                 m_LoadState = ELoadState.LoadAssetBundle;
             }

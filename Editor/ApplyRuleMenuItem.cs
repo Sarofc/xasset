@@ -67,7 +67,7 @@ namespace Saro.XAsset.Build
             foreach (var item in Selection.objects)
             {
                 var path = AssetDatabase.GetAssetPath(item);
-                var rule = new BuildRule
+                var rule = new BuildRule()
                 {
                     searchPath = path,
                     searchPattern = searchPattern,
