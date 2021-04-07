@@ -9,11 +9,12 @@ namespace Saro.XAsset.Build
         public bool runtimeMode = false;
         //[Tooltip("开启虚拟文件系统")]
         //public bool enableVFS = false;
-        [Tooltip("是否开启本地服务器器，可以用来做版本更新测试")]
-        public bool localServer = false;
+        //[Tooltip("是否开启本地服务器器，可以用来做版本更新测试")]
+        //public bool localServer = false;
         [Tooltip("打包到单个文件夹（false: 生成带时间戳的文件夹）")]
         public bool buildSingleFolder = true;
 
+        [Tooltip("Assetbundle打包设置")]
         public BuildAssetBundleOptions buildAssetBundleOptions = BuildAssetBundleOptions.DeterministicAssetBundle | BuildAssetBundleOptions.ChunkBasedCompression;
 
 

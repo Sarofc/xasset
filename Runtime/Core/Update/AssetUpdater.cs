@@ -166,7 +166,7 @@ namespace Saro.XAsset.Update
 
             if (string.IsNullOrEmpty(request.error))
             {
-                Version baseLocalVersion = null;
+                System.Version baseLocalVersion = null;
 
                 using (var ms = new MemoryStream(request.downloadHandler.data))
                 {

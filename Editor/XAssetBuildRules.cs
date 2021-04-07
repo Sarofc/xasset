@@ -117,11 +117,11 @@ namespace Saro.XAsset.Build
 
         #region API
 
-        public Version AddVersion()
+        public System.Version AddVersion()
         {
-            var versionObj = new Version(version);
+            var versionObj = new System.Version(version);
             var revision = versionObj.Revision + 1;
-            versionObj = new Version(versionObj.Major, versionObj.Minor, versionObj.Build, revision);
+            versionObj = new System.Version(versionObj.Major, versionObj.Minor, versionObj.Build, revision);
             version = versionObj.ToString();
             EditorUtility.SetDirty(this);
             AssetDatabase.SaveAssets();
@@ -188,7 +188,7 @@ namespace Saro.XAsset.Build
         {
             if (nameBundleByHash)
             {
-                return Utility.HashUtility.GetMD5Hash(name) + XAsset.k_AssetExtension;
+                return Utility.HashUtility.GetMd5Hash(name) + XAsset.k_AssetExtension;
             }
             return name.Replace("\\", "/").ToLower() + XAsset.k_AssetExtension;
         }

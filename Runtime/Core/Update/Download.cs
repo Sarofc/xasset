@@ -5,6 +5,17 @@ using UnityEngine.Networking;
 
 namespace Saro.XAsset.Update
 {
+    /*
+     * TODO
+     * 
+     * 1.改成通用组件?
+     * 2.检测超时?
+     * 
+     */
+
+    /// <summary>
+    /// 断点续传下载器
+    /// </summary>
     public class Download : DownloadHandlerScript, IDisposable, ICloneable
     {
         public int Id { get; set; }
@@ -91,7 +102,7 @@ namespace Saro.XAsset.Update
                 m_Request.SetRequestHeader("Range", "bytes=" + (Offset + Position) + "-" + (Offset + Length - 1));
                 m_Request.downloadHandler = this;
                 m_Request.SendWebRequest();
-                Debug.Log("Start Download：" + this);
+                Debug.Log($"[{nameof(Download)}] Start Download：" + this);
             }
             else
             {
@@ -153,27 +164,22 @@ namespace Saro.XAsset.Update
                     {
                         if (fs.Length != Length)
                         {
-                            Error = "下载文件长度异常:" + fs.Length;
+                            Error = "下载文件长度异常: " + fs.Length;
                         }
 
-                        if (VersionList.s_VerifyBy == VersionList.EVerifyBy.Crc32)
+                        // TODO 耦合了
+                        if (!VersionList.VerifyHashUseEVerifyBy(Hash, fs))
                         {
-                            if (!Hash.Equals(Utility.HashUtility.GetCRC32Hash(fs), StringComparison.OrdinalIgnoreCase))
-                            {
-                                Error = $"下载文件异常. name: {TempPath} hash: {Hash}";
-                            }
-                        }
-                        else if (VersionList.s_VerifyBy == VersionList.EVerifyBy.Md5)
-                        {
-                            throw new NotImplementedException("md5");
+                            Error = $"下载文件异常. name: {TempPath} hash: {Hash}";
                         }
                     }
                 }
+
                 if (string.IsNullOrEmpty(Error))
                 {
                     File.Copy(TempPath, SavePath, true);
                     File.Delete(TempPath);
-                    Debug.Log("Complete Download：" + Url);
+                    Debug.Log($"[{nameof(Download)}] Complete Download：" + Url);
                     if (Completed == null)
                         return;
                     Completed.Invoke(this);
@@ -187,6 +193,11 @@ namespace Saro.XAsset.Update
             else
             {
                 Error = "文件不存在";
+            }
+
+            if (!string.IsNullOrEmpty(Error))
+            {
+                Debug.LogError($"[{nameof(Download)}] {Error}");
             }
         }
 

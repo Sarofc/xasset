@@ -4,13 +4,11 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
-using Debug = UnityEngine.Debug;
-using Object = UnityEngine.Object;
 
+using Saro;
 using Saro.Core;
 using Saro.Core.Jobs;
 using Saro.Core.Services;
-using Saro;
 using Saro.IO;
 
 namespace Saro.XAsset
@@ -21,7 +19,7 @@ namespace Saro.XAsset
         public const string k_AssetExtension = ".unity3d";
 
         public static bool s_RuntimeMode = true;
-        public static Func<string, Type, Object> s_EditorLoader = null;
+        public static Func<string, Type, UnityEngine.Object> s_EditorLoader = null;
 
         [System.Diagnostics.Conditional("DEBUG_XASSET")]
         private void INFO(string msg)
@@ -114,7 +112,7 @@ namespace Saro.XAsset
             return asset;
         }
 
-        public T LoadAsset<T>(string path) where T : Object
+        public T LoadAsset<T>(string path) where T : UnityEngine.Object
         {
             var asset = LoadAsset(path, typeof(T));
             if (asset != null && asset.Asset != null)
@@ -125,7 +123,7 @@ namespace Saro.XAsset
             return null;
         }
 
-        public IAssetRequest LoadAssetAsync<T>(string path) where T : Object
+        public IAssetRequest LoadAssetAsync<T>(string path) where T : UnityEngine.Object
         {
             return LoadAssetInternal(path, typeof(T), true);
         }
@@ -183,10 +181,10 @@ namespace Saro.XAsset
             var dirs = manifest.dirs;
             var bundles = manifest.bundles;
 
-            foreach (var item in bundles)
+            for (int i = 0; i < bundles.Length; i++)
             {
+                BundleRef item = bundles[i];
                 m_BundleToDependencies[item.name] = Array.ConvertAll(item.deps, id => bundles[id].name);
-                //Log(item.name);
             }
 
             foreach (var item in assets)
@@ -368,7 +366,7 @@ namespace Saro.XAsset
 
         private List<BundleRequest> m_UnusedBundles = new List<BundleRequest>();
 
-        private List<BundleRequest> m_ToloadBundles = new List<BundleRequest>();
+        private List<BundleRequest> m_ToLoadBundles = new List<BundleRequest>();
 
         private List<string> m_ActiveVariants = new List<string>();
 
@@ -459,7 +457,7 @@ namespace Saro.XAsset
 
             if (k_MAX_BUNDLES_PERFRAME > 0 && (bundleRequest is BundleAsyncRequest || bundleRequest is WebBundleRequest))
             {
-                m_ToloadBundles.Add(bundleRequest);
+                m_ToLoadBundles.Add(bundleRequest);
             }
             else
             {
@@ -487,19 +485,19 @@ namespace Saro.XAsset
 
         private void UpdateBundles()
         {
-            if (m_ToloadBundles.Count > 0 &&
+            if (m_ToLoadBundles.Count > 0 &&
                 k_MAX_BUNDLES_PERFRAME > 0 &&
                 m_LoadingBundles.Count < k_MAX_BUNDLES_PERFRAME
                 )
             {
-                for (var i = 0; i < Math.Min(k_MAX_BUNDLES_PERFRAME - m_LoadingBundles.Count, m_ToloadBundles.Count); ++i)
+                for (var i = 0; i < Math.Min(k_MAX_BUNDLES_PERFRAME - m_LoadingBundles.Count, m_ToLoadBundles.Count); ++i)
                 {
-                    var item = m_ToloadBundles[i];
+                    var item = m_ToLoadBundles[i];
                     if (item.m_LoadState == ELoadState.Init)
                     {
                         item.Load();
                         m_LoadingBundles.Add(item);
-                        m_ToloadBundles.RemoveAt(i);
+                        m_ToLoadBundles.RemoveAt(i);
                         --i;
                     }
                 }
@@ -566,7 +564,7 @@ namespace Saro.XAsset
             {
                 WARN("Ambiguous asset bundle variant chosen because there was no matching active variant: " +
                    bundlesWithVariant[bestFitIndex]);
-            }   
+            }
 
             return bestFitIndex != -1 ?
                 bundlesWithVariant[bestFitIndex] :

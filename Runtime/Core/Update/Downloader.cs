@@ -44,7 +44,7 @@ namespace Saro.XAsset.Update
         }
 
         private bool m_Started;
-        [SerializeField] private float sampleTime = 0.5f;
+        [SerializeField] private float m_SampleTime = 0.5f;
 
         public void StartDownload()
         {
@@ -202,7 +202,7 @@ namespace Saro.XAsset.Update
             Position = GetDownloadSize();
 
             var elapsed = Time.realtimeSinceStartup - m_StartTime;
-            if (elapsed - m_LastTime < sampleTime)
+            if (elapsed - m_LastTime < m_SampleTime)
                 return;
 
             var deltaTime = elapsed - m_LastTime;

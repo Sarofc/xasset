@@ -25,12 +25,12 @@ namespace Saro.XAsset.Update
 
         public static readonly EVerifyBy s_VerifyBy = EVerifyBy.Crc32;
 
-        public static Version LoadVersionOnly(BinaryReader reader)
+        public static System.Version LoadVersionOnly(BinaryReader reader)
         {
-            return new Version(reader.ReadString());
+            return new System.Version(reader.ReadString());
         }
 
-        public static Version LoadVersionOnly(string versionListPath)
+        public static System.Version LoadVersionOnly(string versionListPath)
         {
             if (!File.Exists(versionListPath))
                 return null;
@@ -42,7 +42,7 @@ namespace Saro.XAsset.Update
             {
                 fs = File.OpenRead(versionListPath);
                 br = new BinaryReader(fs);
-                return new Version(br.ReadString());
+                return new System.Version(br.ReadString());
             }
             catch (Exception e)
             {
@@ -78,7 +78,7 @@ namespace Saro.XAsset.Update
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
-        public static void BuildVersionList(string outputFolder, string datFolder ,string[] bundles, Version version)
+        public static void BuildVersionList(string outputFolder, string datFolder, string[] bundles, Version version)
         {
             if (!Directory.Exists(datFolder)) Directory.CreateDirectory(datFolder);
 
@@ -110,7 +110,7 @@ namespace Saro.XAsset.Update
                                 var assetInfo = new VersionAssetInfo
                                 {
                                     file = fileInfo.Name,
-                                    hash = Utility.HashUtility.GetCRC32Hash(fs),
+                                    hash = GetHashUseEVerifyBy(fs),
                                     length = fileInfo.Length,
                                     offset = fileInfo.Offset,
                                     pack = k_DatFileName
@@ -155,6 +155,34 @@ namespace Saro.XAsset.Update
             //}
         }
 
+        internal static string GetHashUseEVerifyBy(Stream stream)
+        {
+            if (s_VerifyBy == EVerifyBy.Crc32)
+            {
+                return Utility.HashUtility.GetCrc32Hash(stream);
+            }
+            else if (s_VerifyBy == EVerifyBy.Md5)
+            {
+                return Utility.HashUtility.GetMd5Hash(stream);
+            }
+
+            throw new NotImplementedException("hash function invalid.");
+        }
+
+        internal static bool VerifyHashUseEVerifyBy(string hash, Stream stream)
+        {
+            if (s_VerifyBy == EVerifyBy.Crc32)
+            {
+                return Utility.HashUtility.VerifyCrc32Hash(hash, Utility.HashUtility.GetCrc32Hash(stream));
+            }
+            else if (s_VerifyBy == EVerifyBy.Md5)
+            {
+                return Utility.HashUtility.VerifyMd5Hash(hash, Utility.HashUtility.GetMd5Hash(stream));
+            }
+
+            throw new NotImplementedException("hash function invalid.");
+        }
+
         public bool IsValid()
         {
             return version != null &&
@@ -193,7 +221,7 @@ namespace Saro.XAsset.Update
 
         public void Deserialize(BinaryReader reader)
         {
-            version = new Version(reader.ReadString());
+            version = new System.Version(reader.ReadString());
             var count = reader.ReadInt32();
 
             versionAssetInfos = new Dictionary<string, VersionAssetInfo>(count, StringComparer.OrdinalIgnoreCase);
