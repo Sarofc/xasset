@@ -64,6 +64,7 @@ namespace Saro.XAsset.Build
                     break;
                 case 1:
                     DrawBuildSettings();
+                    DrawButtons();
                     EditorGUILayout.Space();
                     DrawBuildOptions();
                     break;
@@ -203,6 +204,16 @@ namespace Saro.XAsset.Build
                         }
                     });
                 }
+            }
+        }
+
+        void DrawButtons()
+        {
+            if (GUILayout.Button("Run HFS"))
+            {
+                var absoluteHfsExe = System.IO.Path.GetFullPath("Packages/com.saro.xasset/Editor/HFS/hfs.exe");
+                //Debug.LogError(absoluteHfsExe);
+                Common.Cmder.Run(absoluteHfsExe);
             }
         }
 
