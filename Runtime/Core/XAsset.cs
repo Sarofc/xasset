@@ -95,21 +95,21 @@ namespace Saro.XAsset
             }
 
             path = GetExistPath(path);
-            var asset = new SceneAssetAsyncRequest(path, additive);
+            var request = new SceneAssetAsyncRequest(path, additive);
             if (!additive)
             {
                 if (m_RunningSceneRequest != null)
                 {
-                    m_RunningSceneRequest.Release(); ;
+                    m_RunningSceneRequest.Release();
                     m_RunningSceneRequest = null;
                 }
-                m_RunningSceneRequest = asset;
+                m_RunningSceneRequest = request;
             }
-            asset.Load();
-            asset.Retain();
-            m_Scenes.Add(asset);
+            request.Load();
+            request.Retain();
+            m_SceneRequests.Add(request);
             INFO(string.Format("LoadScene:{0}", path));
-            return asset;
+            return request;
         }
 
         public T LoadAsset<T>(string path) where T : UnityEngine.Object
@@ -205,15 +205,9 @@ namespace Saro.XAsset
 
         private List<AssetRequest> m_LoadingAssets = new List<AssetRequest>();
 
-        private List<SceneAssetRequest> m_Scenes = new List<SceneAssetRequest>();
+        private List<SceneAssetRequest> m_SceneRequests = new List<SceneAssetRequest>();
 
         private List<AssetRequest> m_UnusedAssets = new List<AssetRequest>();
-
-        private void Update()
-        {
-            UpdateAssets();
-            UpdateBundles();
-        }
 
         private void UpdateAssets()
         {
@@ -239,12 +233,12 @@ namespace Saro.XAsset
                 }
             }
 
-            for (var i = 0; i < m_Scenes.Count; ++i)
+            for (var i = 0; i < m_SceneRequests.Count; ++i)
             {
-                var request = m_Scenes[i];
+                var request = m_SceneRequests[i];
                 if (request.Update() || !request.IsUnused())
                     continue;
-                m_Scenes.RemoveAt(i);
+                m_SceneRequests.RemoveAt(i);
                 INFO(string.Format("UnloadScene:{0}", request.Url));
                 request.Unload();
                 RemoveUnusedAssets();
@@ -575,7 +569,7 @@ namespace Saro.XAsset
 
         #region Service
 
-        internal ManifestRequest Initialize()
+        public ManifestRequest Initialize()
         {
             if (string.IsNullOrEmpty(s_BasePath))
             {
@@ -610,7 +604,7 @@ namespace Saro.XAsset
 
         IEnumerator<IAsyncJobResult> IService.Initialize(ServiceLocator serviceLocator)
         {
-            Processor.onUpdate += Update;
+            Processor.onUpdate += ((IHasUpdate)this).Update;
 
             var init = Initialize();
 
@@ -632,7 +626,7 @@ namespace Saro.XAsset
             //    ERROR("\t" + path);
             //}
 
-            Processor.onUpdate -= Update;
+            Processor.onUpdate -= ((IHasUpdate)this).Update;
         }
 
         void IHasUpdate.Update()
