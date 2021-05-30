@@ -40,6 +40,8 @@ namespace Saro.XAsset.Build
                 Directory.CreateDirectory(destFolder);
             }
 
+            if (!Directory.Exists(s_DatFolder)) return;
+
             var files = Directory.GetFiles(s_DatFolder);
             foreach (var src in files)
             {
