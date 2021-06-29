@@ -188,9 +188,9 @@ namespace Saro.XAsset.Build
         {
             if (nameBundleByHash)
             {
-                return Utility.HashUtility.GetMd5Hash(name) + XAsset.k_AssetExtension;
+                return Utility.HashUtility.GetMd5Hash(name) + XAssetComponent.k_AssetExtension;
             }
-            return name.Replace("\\", "/").ToLower() + XAsset.k_AssetExtension;
+            return name.Replace("\\", "/").ToLower() + XAssetComponent.k_AssetExtension;
         }
 
         private void Track(string asset, string bundle)

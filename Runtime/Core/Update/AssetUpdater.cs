@@ -323,7 +323,7 @@ namespace Saro.XAsset.Update
             ((IUpdater)this).OnProgress(progress * 1f / size);
         }
 
-        private void OnComplete()
+        private async void OnComplete()
         {
             m_Step = EStep.Wait;
 
@@ -419,29 +419,26 @@ namespace Saro.XAsset.Update
             ((IUpdater)this).OnMessage("初始化资源管理器...");
             ((IUpdater)this).OnProgress(0);
 
-            var initRequest = XAsset.Get().Initialize();
-            initRequest.Completed += (Core.IAssetRequest r) =>
-            {
-                r.Release();
-                if (!r.IsError)
-                {
-                    ((IUpdater)this).OnMessage("初始化成功!");
-                    ((IUpdater)this).OnProgress(1);
+            var result = await XAssetComponent.Get().InitializeAsync();
 
-                    var sceneRequest = XAsset.Get().LoadSceneAsync("Assets/Res/Scene/level-1.unity");
-                    sceneRequest.Completed += _r =>
-                    {
-                        //Debug.LogError("加载成功: " + _r.Asset.name);
-                    };
-                }
-                else
+            if (result)
+            {
+                ((IUpdater)this).OnMessage("初始化成功!");
+                ((IUpdater)this).OnProgress(1);
+
+                var sceneRequest = XAssetComponent.Get().LoadSceneAsync("Assets/Res/Scene/level-1.unity");
+                sceneRequest.Completed += _r =>
                 {
-                    UIDialogue.Show("提示", "初始化异常错误：" + r.Error + "请联系技术支持").onComplete += _ =>
-                    {
-                        Quit();
-                    };
-                }
-            };
+                    //Debug.LogError("加载成功: " + _r.Asset.name);
+                };
+            }
+            else
+            {
+                UIDialogue.Show("提示", "初始化异常错误："/* + manifestRequest.Error*/ + "请联系技术支持").onComplete += _ =>
+                {
+                    Quit();
+                };
+            }
         }
 
         private void Quit()
@@ -589,7 +586,7 @@ namespace Saro.XAsset.Update
             m_Step = EStep.Wait;
             m_NetReachabilityChanged = false;
 
-            XAsset.Get().Clear();
+            XAssetComponent.Get().Clear();
 
             if (Listener != null)
             {

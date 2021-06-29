@@ -289,7 +289,7 @@ namespace Saro.XAsset.Build
 
         internal static XAssetManifest GetXAssetManifest()
         {
-            return GetAsset<XAssetManifest>(XAsset.k_XAssetManifestAsset);
+            return GetAsset<XAssetManifest>(XAssetComponent.k_XAssetManifestAsset);
         }
 
         internal static XAssetBuildRules GetXAssetBuildRules()

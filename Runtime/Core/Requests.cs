@@ -9,7 +9,6 @@ using Debug = UnityEngine.Debug;
 using Object = UnityEngine.Object;
 
 using Saro.Core;
-using Saro.Core.Jobs;
 
 namespace Saro.XAsset
 {
@@ -22,7 +21,7 @@ namespace Saro.XAsset
         Unload,
     }
 
-    public class AssetRequest : Reference, IAssetRequest, IEnumerator, IUnreliableJobDependency
+    public class AssetRequest : Reference, IAssetRequest, IEnumerator
     {
         public Type AssetType { get; set; }
         public string Url { get; set; }
@@ -63,8 +62,8 @@ namespace Saro.XAsset
 
         internal virtual void Load()
         {
-            if (!XAsset.s_RuntimeMode && XAsset.s_EditorLoader != null)
-                Asset = XAsset.s_EditorLoader(Url, AssetType);
+            if (!XAssetComponent.s_RuntimeMode && XAssetComponent.s_EditorLoader != null)
+                Asset = XAssetComponent.s_EditorLoader(Url, AssetType);
             if (Asset == null)
             {
                 Error = "error! file not exist:" + Url;
@@ -76,7 +75,7 @@ namespace Saro.XAsset
             if (Asset == null)
                 return;
 
-            if (!XAsset.s_RuntimeMode)
+            if (!XAssetComponent.s_RuntimeMode)
             {
                 if (!(Asset is GameObject))
                     Resources.UnloadAsset(Asset);
@@ -182,10 +181,10 @@ namespace Saro.XAsset
         internal override void Load()
         {
             m_AssetName = Path.GetFileName(Url);
-            if (XAsset.s_RuntimeMode)
+            if (XAssetComponent.s_RuntimeMode)
             {
                 var assetBundleName = m_AssetName.Replace(".asset", ".unity3d").ToLower();
-                m_Request = XAsset.Get().LoadBundleAsync(assetBundleName);
+                m_Request = XAssetComponent.Get().LoadBundleAsync(assetBundleName);
                 m_Request.Completed = Request_completed;
                 m_LoadState = ELoadState.LoadAssetBundle;
             }
@@ -211,7 +210,7 @@ namespace Saro.XAsset
                 }
                 else
                 {
-                    XAsset.Get().OnManifestLoaded(manifest);
+                    XAssetComponent.Get().OnManifestLoaded(manifest);
                     m_Request.AssetBundle.Unload(true);
                     m_Request.AssetBundle = null;
                 }
@@ -246,7 +245,7 @@ namespace Saro.XAsset
             // 同一帧，先调异步接口，再调用同步接口，同步接口 bundle.assetBundle 报空
             // （不确定异步加载bundle未完成时的情况）
 
-            m_Bundle = XAsset.Get().LoadBundle(m_AssetBundleName);
+            m_Bundle = XAssetComponent.Get().LoadBundle(m_AssetBundleName);
             var assetName = Path.GetFileName(Url);
             Asset = m_Bundle.AssetBundle.LoadAsset(assetName, AssetType);
         }
@@ -353,7 +352,7 @@ namespace Saro.XAsset
 
         internal override void Load()
         {
-            m_Bundle = XAsset.Get().LoadBundleAsync(m_AssetBundleName);
+            m_Bundle = XAssetComponent.Get().LoadBundleAsync(m_AssetBundleName);
             m_LoadState = ELoadState.LoadAssetBundle;
         }
 
@@ -375,7 +374,7 @@ namespace Saro.XAsset
         public SceneAssetRequest(string path, bool addictive)
         {
             Url = path;
-            XAsset.Get().GetAssetBundleName(path, out m_AssetBundleName);
+            XAssetComponent.Get().GetAssetBundleName(path, out m_AssetBundleName);
             m_SceneName = Path.GetFileNameWithoutExtension(Url);
             m_LoadSceneMode = addictive ? LoadSceneMode.Additive : LoadSceneMode.Single;
         }
@@ -389,7 +388,7 @@ namespace Saro.XAsset
         {
             if (!string.IsNullOrEmpty(m_AssetBundleName))
             {
-                m_Bundle = XAsset.Get().LoadBundle(m_AssetBundleName);
+                m_Bundle = XAssetComponent.Get().LoadBundle(m_AssetBundleName);
                 if (m_Bundle != null)
                     SceneManager.LoadScene(m_SceneName, m_LoadSceneMode);
             }
@@ -524,7 +523,7 @@ namespace Saro.XAsset
         {
             if (!string.IsNullOrEmpty(m_AssetBundleName))
             {
-                m_Bundle = XAsset.Get().LoadBundleAsync(m_AssetBundleName);
+                m_Bundle = XAssetComponent.Get().LoadBundleAsync(m_AssetBundleName);
                 m_LoadState = ELoadState.LoadAssetBundle;
             }
             else

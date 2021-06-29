@@ -5,15 +5,22 @@ using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 
-using Saro;
 using Saro.Core;
-using Saro.Core.Jobs;
-using Saro.Core.Services;
-using Saro.IO;
+using MGF;
+using Saro.Tasks;
 
 namespace Saro.XAsset
 {
-    public sealed class XAsset : IAssetMgr
+    [ObjectSystem]
+    public sealed class XAssetComponentUpdateSystem : UpdateSystem<XAssetComponent>
+    {
+        public override void Update(XAssetComponent self)
+        {
+            self.Update();
+        }
+    }
+
+    public sealed class XAssetComponent : EntityAssetInterface
     {
         public const string k_XAssetManifestAsset = "Assets/XAsset/XAssetManifest.asset";
         public const string k_AssetExtension = ".unity3d";
@@ -38,9 +45,9 @@ namespace Saro.XAsset
             Log.ERROR("XAsset", msg);
         }
 
-        internal static XAsset Get()
+        internal static XAssetComponent Get()
         {
-            return (XAsset)MainLocator.Get().Resolve<IAssetMgr>(true);
+            return Game.Resolve<XAssetComponent>();
         }
 
         #region API
@@ -86,7 +93,7 @@ namespace Saro.XAsset
 
         private SceneAssetRequest m_RunningSceneRequest;
 
-        public IAssetRequest LoadSceneAsync(string path, bool additive = false)
+        public override IAssetRequest LoadSceneAsync(string path, bool additive = false)
         {
             if (string.IsNullOrEmpty(path))
             {
@@ -112,7 +119,7 @@ namespace Saro.XAsset
             return request;
         }
 
-        public T LoadAsset<T>(string path) where T : UnityEngine.Object
+        public override T LoadAsset<T>(string path)
         {
             var asset = LoadAsset(path, typeof(T));
             if (asset != null && asset.Asset != null)
@@ -123,27 +130,27 @@ namespace Saro.XAsset
             return null;
         }
 
-        public IAssetRequest LoadAssetAsync<T>(string path) where T : UnityEngine.Object
+        public override IAssetRequest LoadAssetAsync<T>(string path)
         {
             return LoadAssetInternal(path, typeof(T), true);
         }
 
-        public IAssetRequest LoadAssetAsync(string path, Type type)
+        public override IAssetRequest LoadAssetAsync(string path, Type type)
         {
             return LoadAssetInternal(path, type, true);
         }
 
-        public IAssetRequest LoadAsset(string path, Type type)
+        public override IAssetRequest LoadAsset(string path, Type type)
         {
             return LoadAssetInternal(path, type, false);
         }
 
-        public void UnloadAsset(IAssetRequest asset)
+        public override void UnloadAsset(IAssetRequest asset)
         {
             asset.Release();
         }
 
-        public void RemoveUnusedAssets()
+        public override void RemoveUnusedAssets()
         {
             foreach (var item in m_Assets)
             {
@@ -569,7 +576,7 @@ namespace Saro.XAsset
 
         #region Service
 
-        public ManifestRequest Initialize()
+        public async FTask<bool> InitializeAsync()
         {
             if (string.IsNullOrEmpty(s_BasePath))
             {
@@ -599,69 +606,85 @@ namespace Saro.XAsset
 
             var request = new ManifestRequest { Url = k_XAssetManifestAsset };
             AddAssetRequest(request);
-            return request;
+
+            var tcs = new FTaskCompletionSource<bool>();
+
+            request.Completed += (req) =>
+            {
+                req.Release();
+                if (req.IsError)
+                {
+                    ERROR("XAssetComponent Error: " + req.Error);
+                }
+
+                tcs.SetResult(!req.IsError);
+            };
+
+            return await tcs.Task;
         }
 
-        IEnumerator<IAsyncJobResult> IService.Initialize(ServiceLocator serviceLocator)
-        {
-            Processor.onUpdate += ((IHasUpdate)this).Update;
 
-            var init = Initialize();
-
-            yield return new WaitForAssetMgrInitialized(init);
-
-            if (!init.IsError)
-            {
-                //AssetMgr.AddSearchPath("Assets/XAsset/Demo/Scenes");
-            }
-            else
-            {
-                ERROR("[XAsset] Initialize Error");
-            }
-            init.Release();
-
-            //ERROR("all asset path: ");
-            //foreach (var path in GetAllAssetPaths())
-            //{
-            //    ERROR("\t" + path);
-            //}
-
-            Processor.onUpdate -= ((IHasUpdate)this).Update;
-        }
-
-        void IHasUpdate.Update()
+        public void Update()
         {
             UpdateAssets();
             UpdateBundles();
         }
 
-        Type[] IService.GetDependencies()
-        {
-            return null;
-        }
+        //IEnumerator<IAsyncJobResult> IService.Initialize(ServiceLocator serviceLocator)
+        //{
+        //    Processor.onUpdate += ((IHasUpdate)this).Update;
 
-        void IService.Shutdown()
-        { }
+        //    var init = Initialize();
 
-        private sealed class WaitForAssetMgrInitialized : IAsyncJobResult, IJobDependency, IUnreliableJobDependency
-        {
-            private readonly ManifestRequest m_AssetsInitRequest;
+        //    yield return new WaitForAssetMgrInitialized(init);
 
-            public WaitForAssetMgrInitialized(ManifestRequest assetsInitRequest)
-            {
-                m_AssetsInitRequest = assetsInitRequest;
-            }
+        //    if (!init.IsError)
+        //    {
+        //        //AssetMgr.AddSearchPath("Assets/XAsset/Demo/Scenes");
+        //    }
+        //    else
+        //    {
+        //        ERROR("[XAsset] Initialize Error");
+        //    }
+        //    init.Release();
 
-            public bool HasFailed()
-            {
-                return !string.IsNullOrEmpty(m_AssetsInitRequest.Error);
-            }
+        //    //ERROR("all asset path: ");
+        //    //foreach (var path in GetAllAssetPaths())
+        //    //{
+        //    //    ERROR("\t" + path);
+        //    //}
 
-            public bool IsReady()
-            {
-                return m_AssetsInitRequest.IsDone;
-            }
-        }
+        //    Processor.onUpdate -= ((IHasUpdate)this).Update;
+        //}
+
+
+        //Type[] IService.GetDependencies()
+        //{
+        //    return null;
+        //}
+
+        //void IService.Shutdown()
+        //{ }
+
+        //private sealed class WaitForAssetMgrInitialized : IAsyncJobResult, IJobDependency, IUnreliableJobDependency
+        //{
+        //    private readonly ManifestRequest m_AssetsInitRequest;
+
+        //    public WaitForAssetMgrInitialized(ManifestRequest assetsInitRequest)
+        //    {
+        //        m_AssetsInitRequest = assetsInitRequest;
+        //    }
+
+        //    public bool HasFailed()
+        //    {
+        //        return !string.IsNullOrEmpty(m_AssetsInitRequest.Error);
+        //    }
+
+        //    public bool IsReady()
+        //    {
+        //        return m_AssetsInitRequest.IsDone;
+        //    }
+        //}
 
         #endregion
     }

@@ -245,7 +245,7 @@ namespace Saro.XAsset.Build
 
         void EnsureProcedureSettings()
         {
-            m_ProcedureSettings = BuildScript.GetAsset<ProcedureSettings>(ProcedureMgr.k_ProcedureSettingsPath);
+            m_ProcedureSettings = BuildScript.GetAsset<ProcedureSettings>(ProcedureComponent.k_ProcedureSettingsPath);
         }
 
         void ExecuteAction(System.Action action)

@@ -14,9 +14,9 @@ namespace Saro.XAsset.Build
 #endif
         private static void OnInitialize()
         {
-            XAsset.s_RuntimeMode = BuildScript.GetXAssetSettings().runtimeMode;
+            XAssetComponent.s_RuntimeMode = BuildScript.GetXAssetSettings().runtimeMode;
 
-            XAsset.s_EditorLoader = AssetDatabase.LoadAssetAtPath;
+            XAssetComponent.s_EditorLoader = AssetDatabase.LoadAssetAtPath;
 
             var assets = new List<string>();
             var rules = BuildScript.GetXAssetBuildRules();
