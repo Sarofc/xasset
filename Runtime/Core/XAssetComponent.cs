@@ -607,7 +607,7 @@ namespace Saro.XAsset
             var request = new ManifestRequest { Url = k_XAssetManifestAsset };
             AddAssetRequest(request);
 
-            var tcs = new FTaskCompletionSource<bool>();
+            var tcs = FTask<bool>.Create(true);
 
             request.Completed += (req) =>
             {
@@ -620,9 +620,8 @@ namespace Saro.XAsset
                 tcs.SetResult(!req.IsError);
             };
 
-            return await tcs.Task;
+            return await tcs;
         }
-
 
         public void Update()
         {
