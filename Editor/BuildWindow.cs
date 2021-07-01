@@ -12,6 +12,7 @@ namespace Saro.XAsset.Build
         static void ShowBuildWindow()
         {
             var window = GetWindow<BuildWindow>();
+            window.titleContent = new GUIContent("MGF-Build");
             window.Show();
         }
 
@@ -40,7 +41,6 @@ namespace Saro.XAsset.Build
         {
             EnsureXAssetSettings();
             EnsureBuildMethods();
-            EnsureProcedureSettings();
         }
 
         private void OnGUI()
@@ -60,9 +60,6 @@ namespace Saro.XAsset.Build
             switch (m_Selected)
             {
                 case 0:
-                    DrawProcedureSettings();
-                    break;
-                case 1:
                     DrawBuildSettings();
                     DrawButtons();
                     EditorGUILayout.Space();
@@ -72,18 +69,6 @@ namespace Saro.XAsset.Build
                     break;
             }
             EditorGUILayout.EndScrollView();
-        }
-
-        void DrawProcedureSettings()
-        {
-            if (m_ProcedureSettings != null)
-            {
-                Editor.CreateCachedEditor(m_ProcedureSettings, typeof(ProcedureSettingsInspector), ref m_CachedEditor);
-                if (m_CachedEditor != null)
-                {
-                    m_CachedEditor.OnInspectorGUI();
-                }
-            }
         }
 
         void DrawBuildSettings()
@@ -220,14 +205,12 @@ namespace Saro.XAsset.Build
 
         static string[] s_Toolbar = new string[]
         {
-             "ProcedureSettings",
              "XAssetSettings"
         };
 
         Editor m_CachedEditor;
         List<BuildMethod> m_BuildMethods;
         XAssetSettings m_XAssetSettings;
-        ProcedureSettings m_ProcedureSettings;
         private int m_Selected;
         private Vector2 m_ScrolPos;
 
@@ -241,11 +224,6 @@ namespace Saro.XAsset.Build
             m_XAssetSettings = BuildScript.GetXAssetSettings();
             BuildScript.GetXAssetManifest();
             BuildScript.GetXAssetBuildRules();
-        }
-
-        void EnsureProcedureSettings()
-        {
-            m_ProcedureSettings = BuildScript.GetAsset<ProcedureSettings>(ProcedureComponent.k_ProcedureSettingsPath);
         }
 
         void ExecuteAction(System.Action action)

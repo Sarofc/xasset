@@ -8,6 +8,7 @@ using UnityEngine;
 using Saro.Core;
 using MGF;
 using Saro.Tasks;
+using Saro.Common;
 
 namespace Saro.XAsset
 {
@@ -20,6 +21,13 @@ namespace Saro.XAsset
         }
     }
 
+    /*
+     * TODO
+     * 
+     * 引用计数问题！
+     * 
+     */
+    [Serializable]
     public sealed class XAssetComponent : EntityAssetInterface
     {
         public const string k_XAssetManifestAsset = "Assets/XAsset/XAssetManifest.asset";
@@ -356,7 +364,6 @@ namespace Saro.XAsset
 
         #endregion
 
-
         #region Bundles
 
         private const int k_MAX_BUNDLES_PERFRAME = 0;
@@ -628,62 +635,6 @@ namespace Saro.XAsset
             UpdateAssets();
             UpdateBundles();
         }
-
-        //IEnumerator<IAsyncJobResult> IService.Initialize(ServiceLocator serviceLocator)
-        //{
-        //    Processor.onUpdate += ((IHasUpdate)this).Update;
-
-        //    var init = Initialize();
-
-        //    yield return new WaitForAssetMgrInitialized(init);
-
-        //    if (!init.IsError)
-        //    {
-        //        //AssetMgr.AddSearchPath("Assets/XAsset/Demo/Scenes");
-        //    }
-        //    else
-        //    {
-        //        ERROR("[XAsset] Initialize Error");
-        //    }
-        //    init.Release();
-
-        //    //ERROR("all asset path: ");
-        //    //foreach (var path in GetAllAssetPaths())
-        //    //{
-        //    //    ERROR("\t" + path);
-        //    //}
-
-        //    Processor.onUpdate -= ((IHasUpdate)this).Update;
-        //}
-
-
-        //Type[] IService.GetDependencies()
-        //{
-        //    return null;
-        //}
-
-        //void IService.Shutdown()
-        //{ }
-
-        //private sealed class WaitForAssetMgrInitialized : IAsyncJobResult, IJobDependency, IUnreliableJobDependency
-        //{
-        //    private readonly ManifestRequest m_AssetsInitRequest;
-
-        //    public WaitForAssetMgrInitialized(ManifestRequest assetsInitRequest)
-        //    {
-        //        m_AssetsInitRequest = assetsInitRequest;
-        //    }
-
-        //    public bool HasFailed()
-        //    {
-        //        return !string.IsNullOrEmpty(m_AssetsInitRequest.Error);
-        //    }
-
-        //    public bool IsReady()
-        //    {
-        //        return m_AssetsInitRequest.IsDone;
-        //    }
-        //}
 
         #endregion
     }
