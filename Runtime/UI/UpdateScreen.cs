@@ -9,7 +9,7 @@ namespace Saro.XAsset.Update
         [SerializeField] private Slider progressBar;
         [SerializeField] private Text progressText;
         [SerializeField] private Button buttonStart;
-        [SerializeField] private AssetUpdater resourceUpdater;
+        [SerializeField] private AssetUpdaterComponent resourceUpdater;
 
 
         private void Start()

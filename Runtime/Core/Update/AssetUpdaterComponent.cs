@@ -1,4 +1,5 @@
 
+using MGF;
 using Saro.IO;
 using Saro.UI;
 using System;
@@ -10,9 +11,40 @@ using UnityEngine.Networking;
 
 namespace Saro.XAsset.Update
 {
-    [RequireComponent(typeof(Downloader))]
-    [RequireComponent(typeof(NetworkMonitor))]
-    public sealed class AssetUpdater : MonoBehaviour, IUpdater, INetworkMonitorListener
+    [ObjectSystem]
+    internal class AssetUpdaterComponentStartSystem : StartSystem<AssetUpdaterComponent>
+    {
+        public override void Start(AssetUpdaterComponent self)
+        {
+            self.Start();
+        }
+    }
+
+    //[ObjectSystem]
+    //internal class AssetUpdaterComponentUpdateSystem : UpdateSystem<AssetUpdaterComponent>
+    //{
+    //    public override void Update(AssetUpdaterComponent self)
+    //    {
+    //        self.Update();
+    //    }
+    //}
+
+    [ObjectSystem]
+    internal class AssetUpdaterComponentDestroySystem : DestroySystem<AssetUpdaterComponent>
+    {
+        public override void Destroy(AssetUpdaterComponent self)
+        {
+            self.Destroy();
+        }
+    }
+
+    /*
+     * TODO
+     * 
+     * 使用EventSystem 將ui解耦
+     * 
+     */
+    public sealed class AssetUpdaterComponent : Entity, IUpdater, INetworkMonitorListener
     {
         private enum EStep
         {
@@ -30,8 +62,8 @@ namespace Saro.XAsset.Update
         [SerializeField] private string m_BaseURL = "http://127.0.0.1:7888/DLC/";
 
         private EStep m_Step;
-        private Downloader m_Downloader;
-        private NetworkMonitor m_NetworkMonitor;
+        private DownloaderComponent m_Downloader;
+        private NetworkMonitorComponent m_NetworkMonitor;
         private string m_DlcPath;
         private string m_BasePath;
 
@@ -39,13 +71,13 @@ namespace Saro.XAsset.Update
 
         private IEnumerator m_Checking;
 
-        private void Start()
+        public void Start()
         {
-            m_Downloader = GetComponent<Downloader>();
+            m_Downloader = GetComponent<DownloaderComponent>();
             m_Downloader.onUpdate = OnUpdate;
             m_Downloader.onFinished = OnComplete;
 
-            m_NetworkMonitor = GetComponent<NetworkMonitor>();
+            m_NetworkMonitor = GetComponent<NetworkMonitorComponent>();
             m_NetworkMonitor.Listener = this;
 
             m_DlcPath = GetDlcPath();
@@ -54,12 +86,12 @@ namespace Saro.XAsset.Update
             m_Step = EStep.Wait;
         }
 
-        private void OnDestroy()
+        public void Destroy()
         {
             UI.UIDialogue.Dispose();
         }
 
-        private void OnApplicationFocus(bool hasFocus)
+        public void OnApplicationFocus(bool hasFocus)
         {
             if (m_NetReachabilityChanged || m_Step == EStep.Wait) return;
 
@@ -90,11 +122,11 @@ namespace Saro.XAsset.Update
 
             if (m_Checking != null)
             {
-                StopCoroutine(m_Checking);
+                Main.CancelCoroutine(m_Checking);
             }
 
             m_Checking = Checking();
-            StartCoroutine(m_Checking);
+            Main.RunCoroutine(m_Checking);
         }
 
         private IEnumerator Checking()
@@ -135,7 +167,7 @@ namespace Saro.XAsset.Update
 
                 if (totalSize > 0)
                 {
-                    var tips = string.Format("发现内容更新，总计需要下载 {0} 内容", Downloader.GetDisplaySize(totalSize));
+                    var tips = string.Format("发现内容更新，总计需要下载 {0} 内容", DownloaderComponent.GetDisplaySize(totalSize));
                     var mb = UI.UIDialogue.Show("提示", tips, "下载", "退出");
                     yield return mb;
                     if (mb.isOk)
@@ -303,7 +335,7 @@ namespace Saro.XAsset.Update
             OverrideLocalVersionListUseTmp();
         }
 
-        public void Clear()
+        public void ClearAssets()
         {
             UIDialogue.Show("提示", "清除数据后所有数据需要重新下载，请确认！", "清除").onComplete += id =>
             {
@@ -316,9 +348,9 @@ namespace Saro.XAsset.Update
         private void OnUpdate(long progress, long size, float speed)
         {
             ((IUpdater)this).OnMessage(string.Format("下载中...\t\t{0}/{1}\t\t速度: {2}",
-                Downloader.GetDisplaySize(progress),
-                Downloader.GetDisplaySize(size),
-                Downloader.GetDisplaySpeed(speed)));
+                DownloaderComponent.GetDisplaySize(progress),
+                DownloaderComponent.GetDisplaySize(size),
+                DownloaderComponent.GetDisplaySpeed(speed)));
 
             ((IUpdater)this).OnProgress(progress * 1f / size);
         }
@@ -380,7 +412,7 @@ namespace Saro.XAsset.Update
                     //    File.Delete(downloads[i].SavePath);
                     //}
 
-                    m_Downloader.Clear();
+                    m_Downloader.Destroy();
                 }
                 catch (IOException e)
                 {
@@ -582,7 +614,7 @@ namespace Saro.XAsset.Update
             ((IUpdater)this).OnMessage("数据清除完毕");
             ((IUpdater)this).OnProgress(0);
 
-            m_Downloader.Clear();
+            m_Downloader.Destroy();
             m_Step = EStep.Wait;
             m_NetReachabilityChanged = false;
 

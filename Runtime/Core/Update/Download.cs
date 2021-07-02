@@ -20,7 +20,7 @@ namespace Saro.XAsset.Update
     {
         public int Id { get; set; }
 
-        public string Error { get; private set; }
+        public string Error { get; internal set; }
 
         public long Offset { get; set; }
 
@@ -151,54 +151,8 @@ namespace Saro.XAsset.Update
             {
                 return;
             }
-            CheckFile();
-        }
-
-        private void CheckFile()
-        {
-            if (File.Exists(TempPath))
-            {
-                if (string.IsNullOrEmpty(Error))
-                {
-                    using (var fs = File.OpenRead(TempPath))
-                    {
-                        if (fs.Length != Length)
-                        {
-                            Error = "下载文件长度异常: " + fs.Length;
-                        }
-
-                        // TODO 耦合了
-                        if (!VersionList.VerifyHashUseEVerifyBy(Hash, fs))
-                        {
-                            Error = $"下载文件异常. name: {TempPath} hash: {Hash}";
-                        }
-                    }
-                }
-
-                if (string.IsNullOrEmpty(Error))
-                {
-                    File.Copy(TempPath, SavePath, true);
-                    File.Delete(TempPath);
-                    Debug.Log($"[{nameof(Download)}] Complete Download：" + Url);
-                    if (Completed == null)
-                        return;
-                    Completed.Invoke(this);
-                    Completed = null;
-                }
-                else
-                {
-                    File.Delete(TempPath);
-                }
-            }
-            else
-            {
-                Error = "文件不存在";
-            }
-
-            if (!string.IsNullOrEmpty(Error))
-            {
-                Debug.LogError($"[{nameof(Download)}] {Error}");
-            }
+            Completed?.Invoke(this);
+            Completed = null;
         }
 
         public void Retry()

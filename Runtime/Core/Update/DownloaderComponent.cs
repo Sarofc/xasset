@@ -1,3 +1,4 @@
+using MGF;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -5,7 +6,35 @@ using UnityEngine;
 
 namespace Saro.XAsset.Update
 {
-    public sealed class Downloader : MonoBehaviour
+    [ObjectSystem]
+    internal class DownloaderComponentStartSystem : StartSystem<DownloaderComponent>
+    {
+        public override void Start(DownloaderComponent self)
+        {
+            self.StartDownload();
+        }
+    }
+
+    [ObjectSystem]
+    internal class DownloaderComponentUpdateSystem : UpdateSystem<DownloaderComponent>
+    {
+        public override void Update(DownloaderComponent self)
+        {
+            self.Update();
+        }
+    }
+
+    [ObjectSystem]
+    internal class DownloaderComponentDestroySystem : DestroySystem<DownloaderComponent>
+    {
+        public override void Destroy(DownloaderComponent self)
+        {
+            self.Destroy();
+        }
+    }
+
+
+    public sealed class DownloaderComponent : Entity
     {
         private const float k_BYTES_2_MB = 1f / (1024 * 1024);
 
@@ -82,7 +111,7 @@ namespace Saro.XAsset.Update
             m_Started = false;
         }
 
-        public void Clear()
+        public void Destroy()
         {
             Size = 0;
             Position = 0;
@@ -113,7 +142,7 @@ namespace Saro.XAsset.Update
                 Offset = offset,
                 Length = length,
                 SavePath = savePath,
-                Completed = OnFinished
+                Completed = CheckFile
             };
             m_Downloads.Add(download);
             var info = new FileInfo(download.TempPath);
@@ -172,7 +201,7 @@ namespace Saro.XAsset.Update
         }
 
 
-        private void Update()
+        public void Update()
         {
             if (!m_Started)
                 return;
@@ -214,6 +243,56 @@ namespace Saro.XAsset.Update
 
             m_LastTime = elapsed;
             m_LastSize = Position;
+        }
+
+        private void CheckFile(Download download)
+        {
+            var TempPath = download.TempPath;
+            var Length = download.Length;
+            var Hash = download.Hash;
+            var Error = download.Error;
+            var SavePath = download.SavePath;
+            var Url = download.Url;
+
+            if (File.Exists(TempPath))
+            {
+                if (string.IsNullOrEmpty(Error))
+                {
+                    using (var fs = File.OpenRead(TempPath))
+                    {
+                        if (fs.Length != Length)
+                        {
+                            Error = "下载文件长度异常: " + fs.Length;
+                        }
+
+                        if (!VersionList.VerifyHashUseEVerifyBy(Hash, fs))
+                        {
+                            Error = $"下载文件异常. name: {TempPath} hash: {Hash}";
+                        }
+                    }
+                }
+
+                if (string.IsNullOrEmpty(Error))
+                {
+                    File.Copy(TempPath, SavePath, true);
+                    File.Delete(TempPath);
+
+                    OnFinished(download);
+                }
+                else
+                {
+                    File.Delete(TempPath);
+                }
+            }
+            else
+            {
+                Error = "文件不存在";
+            }
+
+            if (!string.IsNullOrEmpty(Error))
+            {
+                Debug.LogError($"[{nameof(Download)}] {Error}");
+            }
         }
     }
 }
