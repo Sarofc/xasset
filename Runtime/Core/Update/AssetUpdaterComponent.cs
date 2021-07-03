@@ -1,7 +1,6 @@
 
 using MGF;
 using Saro.IO;
-using Saro.UI;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -12,11 +11,13 @@ using UnityEngine.Networking;
 namespace Saro.XAsset.Update
 {
     [ObjectSystem]
-    internal class AssetUpdaterComponentStartSystem : StartSystem<AssetUpdaterComponent>
+    internal class AssetUpdaterComponentAwakeSystem : AwakeSystem<AssetUpdaterComponent>
     {
-        public override void Start(AssetUpdaterComponent self)
+        public override void Awake(AssetUpdaterComponent self)
         {
-            self.Start();
+            Main.onApplicationFocus += self.OnApplicationFocus;
+
+            self.Awake();
         }
     }
 
@@ -34,6 +35,8 @@ namespace Saro.XAsset.Update
     {
         public override void Destroy(AssetUpdaterComponent self)
         {
+            Main.onApplicationFocus -= self.OnApplicationFocus;
+
             self.Destroy();
         }
     }
@@ -71,13 +74,13 @@ namespace Saro.XAsset.Update
 
         private IEnumerator m_Checking;
 
-        public void Start()
+        public void Awake()
         {
-            m_Downloader = GetComponent<DownloaderComponent>();
+            m_Downloader = AddComponent<DownloaderComponent>();
             m_Downloader.onUpdate = OnUpdate;
             m_Downloader.onFinished = OnComplete;
 
-            m_NetworkMonitor = GetComponent<NetworkMonitorComponent>();
+            m_NetworkMonitor = AddComponent<NetworkMonitorComponent>();
             m_NetworkMonitor.Listener = this;
 
             m_DlcPath = GetDlcPath();
@@ -88,7 +91,7 @@ namespace Saro.XAsset.Update
 
         public void Destroy()
         {
-            UI.UIDialogue.Dispose();
+            //UI.UIDialogue.Dispose();
         }
 
         public void OnApplicationFocus(bool hasFocus)
@@ -97,7 +100,7 @@ namespace Saro.XAsset.Update
 
             if (hasFocus)
             {
-                UIDialogue.CloseAll();
+                //UIDialogue.CloseAll();
                 if (m_Step == EStep.Download)
                 {
                     m_Downloader.Restart();
@@ -140,6 +143,8 @@ namespace Saro.XAsset.Update
             {
                 //yield return RequestVFS();
                 m_Step = EStep.Copy;
+
+                Debug.LogError("Step.Copy");
             }
 
             if (m_Step == EStep.Copy)
@@ -153,6 +158,8 @@ namespace Saro.XAsset.Update
                 var versionList = VersionList.LoadVersionList(tmpLocalVersionFile);
                 yield return UpdateCopy(versionList);
                 m_Step = EStep.Versions;
+
+                Debug.LogError("Step.Versions");
             }
 
             if (m_Step == EStep.Versions)
@@ -168,17 +175,19 @@ namespace Saro.XAsset.Update
                 if (totalSize > 0)
                 {
                     var tips = string.Format("发现内容更新，总计需要下载 {0} 内容", DownloaderComponent.GetDisplaySize(totalSize));
-                    var mb = UI.UIDialogue.Show("提示", tips, "下载", "退出");
-                    yield return mb;
-                    if (mb.isOk)
+                    //var mb = UI.UIDialogue.Show("提示", tips, "下载", "退出");
+                    //yield return mb;
+                    //if (mb.isOk)
                     {
                         m_Downloader.StartDownload();
                         m_Step = EStep.Download;
+
+                        Debug.LogError("Step.Download");
                     }
-                    else
-                    {
-                        Quit();
-                    }
+                    //else
+                    //{
+                    //    Quit();
+                    //}
                 }
                 else
                 {
@@ -216,20 +225,28 @@ namespace Saro.XAsset.Update
                         File.WriteAllBytes(tmpLocalVersionFilePath, request.downloadHandler.data);
 
                         m_Step = EStep.Coping;
+
+                        Debug.LogError("Step.Coping");
                     }
                     else
                     {
                         m_Step = EStep.Versions;
+
+                        Debug.LogError("Step.Versions");
                     }
                 }
                 else
                 {
                     m_Step = EStep.Versions;
+
+                    Debug.LogError("Step.Versions");
                 }
             }
             else
             {
                 m_Step = EStep.Versions;
+
+                Debug.LogError("Step.Versions");
             }
             request.Dispose();
         }
@@ -239,16 +256,16 @@ namespace Saro.XAsset.Update
             ((IUpdater)this).OnMessage("正在获取版本信息...");
             if (Application.internetReachability == NetworkReachability.NotReachable)
             {
-                var mb = UIDialogue.Show("提示", "请检查网络连接状态", "重试", "退出");
-                yield return mb;
-                if (mb.isOk)
+                //var mb = UIDialogue.Show("提示", "请检查网络连接状态", "重试", "退出");
+                //yield return mb;
+                //if (mb.isOk)
                 {
                     StartUpdate();
                 }
-                else
-                {
-                    Quit();
-                }
+                //else
+                //{
+                //    Quit();
+                //}
                 yield break;
             }
 
@@ -260,16 +277,17 @@ namespace Saro.XAsset.Update
             request.Dispose();
             if (!string.IsNullOrEmpty(error))
             {
-                var mb = UI.UIDialogue.Show("提示", $"获取服务器版本失败: \n{error}", "重试");
-                yield return mb;
-                if (mb.isOk)
+                Debug.LogError($"获取服务器版本失败: \n{error}");
+                //var mb = UI.UIDialogue.Show("提示", $"获取服务器版本失败: \n{error}", "重试");
+                //yield return mb;
+                //if (mb.isOk)
                 {
                     StartUpdate();
                 }
-                else
-                {
-                    Quit();
-                }
+                //else
+                //{
+                //    Quit();
+                //}
                 yield break;
             }
 
@@ -281,6 +299,8 @@ namespace Saro.XAsset.Update
                 if (PrepareDownloads(remoteVersionList, localVersionList))
                 {
                     m_Step = EStep.Prepared;
+
+                    Debug.LogError("Step.Prepared");
                 }
                 else
                 {
@@ -291,18 +311,19 @@ namespace Saro.XAsset.Update
             {
                 Debug.LogException(e);
 
-                UIDialogue.Show("提示", "版本文件加载失败", "重试", "退出").onComplete +=
-                     delegate (UI.UIDialogue.EventId id)
-                     {
-                         if (id == UI.UIDialogue.EventId.Ok)
-                         {
-                             StartUpdate();
-                         }
-                         else
-                         {
-                             Quit();
-                         }
-                     };
+                Debug.LogError("版本文件加载失败");
+                //UIDialogue.Show("提示", "版本文件加载失败", "重试", "退出").onComplete +=
+                //     delegate (UI.UIDialogue.EventId id)
+                //     {
+                //         if (id == UI.UIDialogue.EventId.Ok)
+                //         {
+                //             StartUpdate();
+                //         }
+                //         else
+                //         {
+                //             Quit();
+                //         }
+                //     };
             }
         }
 
@@ -337,12 +358,12 @@ namespace Saro.XAsset.Update
 
         public void ClearAssets()
         {
-            UIDialogue.Show("提示", "清除数据后所有数据需要重新下载，请确认！", "清除").onComplete += id =>
-            {
-                if (id != UIDialogue.EventId.Ok)
-                    return;
-                ((IUpdater)this).OnClear();
-            };
+            //UIDialogue.Show("提示", "清除数据后所有数据需要重新下载，请确认！", "清除").onComplete += id =>
+            //{
+            //    if (id != UIDialogue.EventId.Ok)
+            //        return;
+            //    ((IUpdater)this).OnClear();
+            //};
         }
 
         private void OnUpdate(long progress, long size, float speed)
@@ -358,6 +379,8 @@ namespace Saro.XAsset.Update
         private async void OnComplete()
         {
             m_Step = EStep.Wait;
+
+            Debug.LogError("Step.Wait");
 
             var downloads = m_Downloader.Downloads;
             if (downloads.Count > 0)
@@ -466,10 +489,11 @@ namespace Saro.XAsset.Update
             }
             else
             {
-                UIDialogue.Show("提示", "初始化异常错误："/* + manifestRequest.Error*/ + "请联系技术支持").onComplete += _ =>
-                {
-                    Quit();
-                };
+                Debug.LogError("初始化异常错误：");
+                //UIDialogue.Show("提示", "初始化异常错误："/* + manifestRequest.Error*/ + "请联系技术支持").onComplete += _ =>
+                //{
+                //    Quit();
+                //};
             }
         }
 
@@ -675,25 +699,26 @@ namespace Saro.XAsset.Update
 
             if (reachability == NetworkReachability.NotReachable)
             {
-                UI.UIDialogue.Show("提示！", "找不到网络，请确保手机已经联网", "确定", "退出").onComplete += delegate (UIDialogue.EventId id)
-                {
-                    if (id == UIDialogue.EventId.Ok)
-                    {
-                        if (m_Step == EStep.Download)
-                        {
-                            m_Downloader.Restart();
-                        }
-                        else
-                        {
-                            StartUpdate();
-                        }
-                        m_NetReachabilityChanged = false;
-                    }
-                    else
-                    {
-                        Quit();
-                    }
-                };
+                Debug.LogError("找不到网络，请确保手机已经联网");
+                //UI.UIDialogue.Show("提示！", "找不到网络，请确保手机已经联网", "确定", "退出").onComplete += delegate (UIDialogue.EventId id)
+                //{
+                //    if (id == UIDialogue.EventId.Ok)
+                //    {
+                //        if (m_Step == EStep.Download)
+                //        {
+                //            m_Downloader.Restart();
+                //        }
+                //        else
+                //        {
+                //            StartUpdate();
+                //        }
+                //        m_NetReachabilityChanged = false;
+                //    }
+                //    else
+                //    {
+                //        Quit();
+                //    }
+                //};
             }
             else
             {
@@ -707,7 +732,7 @@ namespace Saro.XAsset.Update
                 }
 
                 m_NetReachabilityChanged = false;
-                UIDialogue.CloseAll();
+                //UIDialogue.CloseAll();
             }
         }
 

@@ -1,3 +1,5 @@
+using MGF;
+using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -9,13 +11,17 @@ namespace Saro.XAsset.Update
         [SerializeField] private Slider progressBar;
         [SerializeField] private Text progressText;
         [SerializeField] private Button buttonStart;
-        [SerializeField] private AssetUpdaterComponent resourceUpdater;
 
-
-        private void Start()
+        private IEnumerator Start()
         {
+            yield return null;
+            yield return null;
+            yield return null;
+            yield return null;
+            yield return null;
+
             version.text = "Ver 0.0.0.1";
-            resourceUpdater.Listener = this;
+            Game.Resolve<AssetUpdaterComponent>().Listener = this;
         }
 
         #region IUpdater implementation
