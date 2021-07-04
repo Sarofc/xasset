@@ -1,5 +1,5 @@
 
-using MGF;
+using Saro;
 using Saro.IO;
 using System;
 using System.Collections;
@@ -43,6 +43,8 @@ namespace Saro.XAsset.Update
 
     /*
      * TODO
+     * 
+     * 使用FTask重构
      * 
      * 使用EventSystem 將ui解耦
      * 
@@ -543,7 +545,7 @@ namespace Saro.XAsset.Update
 
         private string GetDownloadURL(string fileName)
         {
-            return string.Format("{0}{1}/{2}", m_BaseURL, GetPlatformForAssetBundles(Application.platform), fileName);
+            return string.Format("{0}{1}/{2}", m_BaseURL, XAssetComponent.GetCurrentPlatformName(), fileName);
         }
 
         private static string GetDlcPath()
@@ -553,7 +555,7 @@ namespace Saro.XAsset.Update
 
         private static string GetBasePath()
         {
-            return GetStreamingAssetsPath() + "/" + GetPlatformForAssetBundles(Application.platform) + "/";
+            return GetStreamingAssetsPath() + "/" + XAssetComponent.GetCurrentPlatformName() + "/";
         }
 
         private static string GetStreamingAssetsPath()
@@ -572,26 +574,6 @@ namespace Saro.XAsset.Update
             return "file://" + Application.streamingAssetsPath;
         }
 
-        private static string GetPlatformForAssetBundles(RuntimePlatform target)
-        {
-            switch (target)
-            {
-                case RuntimePlatform.Android:
-                    return "Android";
-                case RuntimePlatform.IPhonePlayer:
-                    return "iOS";
-                case RuntimePlatform.WindowsPlayer:
-                case RuntimePlatform.WindowsEditor:
-                    return "Windows";
-                case RuntimePlatform.OSXEditor:
-                case RuntimePlatform.OSXPlayer:
-                    return "iOS"; // OSX
-                case RuntimePlatform.WebGLPlayer:
-                    return "WebGL";
-                default:
-                    return null;
-            }
-        }
 
         private string GetBaseVersionListPath()
         {

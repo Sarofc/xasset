@@ -80,6 +80,8 @@ namespace Saro.XAsset.Update
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
         public static void BuildVersionList(string outputFolder, string datFolder, string[] bundles, Version version)
         {
+#if UNITY_EDITOR
+
             if (!Directory.Exists(datFolder)) Directory.CreateDirectory(datFolder);
 
             var versionAssetInfos = new Dictionary<string, VersionAssetInfo>(bundles.Length);
@@ -153,6 +155,8 @@ namespace Saro.XAsset.Update
             //        }
             //    }
             //}
+
+#endif
         }
 
         internal static string GetHashUseEVerifyBy(Stream stream)

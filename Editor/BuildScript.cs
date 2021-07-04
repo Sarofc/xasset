@@ -8,8 +8,8 @@ namespace Saro.XAsset.Build
 {
     public static class BuildScript
     {
-        public static string s_OutputFolder = "ExtraResources/DLC/" + GetPlatformName();
-        public static string s_DatFolder = s_OutputFolder + "/Dat";
+        public static string s_DLCFolder = "ExtraResources/DLC/" + GetPlatformName();
+        public static string s_DatFolder = s_DLCFolder + "/Dat";
 
         public static void ClearAssetBundleNames()
         {
@@ -39,18 +39,45 @@ namespace Saro.XAsset.Build
             {
                 Directory.CreateDirectory(destFolder);
             }
-
-            if (!Directory.Exists(s_DatFolder)) return;
-
-            var files = Directory.GetFiles(s_DatFolder);
-            foreach (var src in files)
+            else
             {
-                var fileName = Path.GetFileName(src);
-
-                var dest = Path.Combine(destFolder, fileName);
-                if (File.Exists(src))
+                var files = Directory.GetFiles(destFolder);
+                foreach (var file in files)
                 {
-                    File.Copy(src, dest, true);
+                    File.Delete(file);
+                }
+            }
+
+            if (true)
+            {
+                if (!Directory.Exists(s_DLCFolder)) return;
+
+                var files = Directory.GetFiles(s_DLCFolder);
+                foreach (var src in files)
+                {
+                    var fileName = Path.GetFileName(src);
+
+                    var dest = Path.Combine(destFolder, fileName);
+                    if (File.Exists(src))
+                    {
+                        File.Copy(src, dest, true);
+                    }
+                }
+            }
+            else // TODO vfs
+            {
+                if (!Directory.Exists(s_DatFolder)) return;
+
+                var files = Directory.GetFiles(s_DatFolder);
+                foreach (var src in files)
+                {
+                    var fileName = Path.GetFileName(src);
+
+                    var dest = Path.Combine(destFolder, fileName);
+                    if (File.Exists(src))
+                    {
+                        File.Copy(src, dest, true);
+                    }
                 }
             }
         }
@@ -136,10 +163,10 @@ namespace Saro.XAsset.Build
         public static string CreateAssetBundleDirectory()
         {
             // Choose the output path according to the build target.
-            if (!Directory.Exists(s_OutputFolder))
-                Directory.CreateDirectory(s_OutputFolder);
+            if (!Directory.Exists(s_DLCFolder))
+                Directory.CreateDirectory(s_DLCFolder);
 
-            return s_OutputFolder;
+            return s_DLCFolder;
         }
 
         public static void BuildAssetBundles()
@@ -205,9 +232,17 @@ namespace Saro.XAsset.Build
                     index = dirs.Count;
                     dirs.Add(dir);
                 }
+                try
+                {
+                    var asset = new AssetRef { bundle = bundle2Ids[item.bundle], dir = index, name = Path.GetFileName(path) };
+                    assets.Add(asset);
+                }
+                catch (Exception e)
+                {
+                    Debug.LogError($"{item.bundle} {index} {Path.GetFileName(path)}");
+                    throw e;
+                }
 
-                var asset = new AssetRef { bundle = bundle2Ids[item.bundle], dir = index, name = Path.GetFileName(path) };
-                assets.Add(asset);
             }
 
             xassetManifest.dirs = dirs.ToArray();
@@ -218,7 +253,7 @@ namespace Saro.XAsset.Build
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
 
-            var manifestBundleName = "manifest.unity3d";
+            var manifestBundleName = "xassetmanifest.unity3d";
             assetBundleBuilds = new[] {
                 new AssetBundleBuild {
                     assetNames = new[] { AssetDatabase.GetAssetPath (xassetManifest), },
@@ -229,7 +264,10 @@ namespace Saro.XAsset.Build
             BuildPipeline.BuildAssetBundles(outputFolder, assetBundleBuilds, options, targetPlatform);
             ArrayUtility.Add(ref bundles, manifestBundleName);
 
-            Update.VersionList.BuildVersionList(outputFolder, s_DatFolder, bundles, GetXAssetBuildRules().AddVersion());
+            var version = GetXAssetBuildRules().AddVersion();
+
+            // TODO œ»≤ª¥Úvfs
+            //Update.VersionList.BuildVersionList(outputFolder, s_DatFolder, bundles, version);
         }
 
         private static string GetBuildTargetName(BuildTarget target)

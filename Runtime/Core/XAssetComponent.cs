@@ -1,18 +1,17 @@
-﻿//#define DEBUG_XASSET
+﻿#define DEBUG_XASSET
 
 using System;
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 
-using MGF;
 using Saro.Core;
 using Saro.Tasks;
 
 namespace Saro.XAsset
 {
     [ObjectSystem]
-    public sealed class XAssetComponentUpdateSystem : UpdateSystem<XAssetComponent>
+    internal sealed class XAssetComponentUpdateSystem : UpdateSystem<XAssetComponent>
     {
         public override void Update(XAssetComponent self)
         {
@@ -27,8 +26,9 @@ namespace Saro.XAsset
      * 
      */
     [Serializable]
-    public sealed class XAssetComponent : EntityAssetInterface
+    public sealed class XAssetComponent : Entity, IAssetInterface
     {
+        public const string k_AssetBundles = "DLC";
         public const string k_XAssetManifestAsset = "Assets/XAsset/XAssetManifest.asset";
         public const string k_AssetExtension = ".unity3d";
 
@@ -80,6 +80,32 @@ namespace Saro.XAsset
             m_SearchPaths.Add(path);
         }
 
+        public static string GetCurrentPlatformName()
+        {
+            return GetPlatformForAssetBundles(Application.platform);
+        }
+
+        public static string GetPlatformForAssetBundles(RuntimePlatform target)
+        {
+            switch (target)
+            {
+                case RuntimePlatform.Android:
+                    return "Android";
+                case RuntimePlatform.IPhonePlayer:
+                    return "iOS";
+                case RuntimePlatform.WindowsPlayer:
+                case RuntimePlatform.WindowsEditor:
+                    return "Windows";
+                case RuntimePlatform.OSXEditor:
+                case RuntimePlatform.OSXPlayer:
+                    return "iOS"; // OSX
+                case RuntimePlatform.WebGLPlayer:
+                    return "WebGL";
+                default:
+                    return null;
+            }
+        }
+
         public void Clear()
         {
             if (m_RunningSceneRequest != null)
@@ -100,7 +126,7 @@ namespace Saro.XAsset
 
         private SceneAssetRequest m_RunningSceneRequest;
 
-        public override IAssetRequest LoadSceneAsync(string path, bool additive = false)
+        public IAssetRequest LoadSceneAsync(string path, bool additive = false)
         {
             if (string.IsNullOrEmpty(path))
             {
@@ -126,38 +152,42 @@ namespace Saro.XAsset
             return request;
         }
 
-        public override T LoadAsset<T>(string path)
+        public T LoadAsset<T>(string path) where T : UnityEngine.Object
         {
-            var asset = LoadAsset(path, typeof(T));
-            if (asset != null && asset.Asset != null)
+            var request = LoadAsset(path, typeof(T));
+            if (request != null && request.Asset != null)
             {
-                return asset.Asset as T;
+                return request.Asset as T;
+            }
+            else
+            {
+                ERROR($"error {request.Error}");
             }
 
             return null;
         }
 
-        public override IAssetRequest LoadAssetAsync<T>(string path)
+        public IAssetRequest LoadAssetAsync<T>(string path) where T : UnityEngine.Object
         {
             return LoadAssetInternal(path, typeof(T), true);
         }
 
-        public override IAssetRequest LoadAssetAsync(string path, Type type)
+        public IAssetRequest LoadAssetAsync(string path, Type type)
         {
             return LoadAssetInternal(path, type, true);
         }
 
-        public override IAssetRequest LoadAsset(string path, Type type)
+        public IAssetRequest LoadAsset(string path, Type type)
         {
             return LoadAssetInternal(path, type, false);
         }
 
-        public override void UnloadAsset(IAssetRequest asset)
+        public void UnloadAsset(IAssetRequest asset)
         {
             asset.Release();
         }
 
-        public override void RemoveUnusedAssets()
+        public void RemoveUnusedAssets()
         {
             foreach (var item in m_Assets)
             {
@@ -586,12 +616,12 @@ namespace Saro.XAsset
         {
             if (string.IsNullOrEmpty(s_BasePath))
             {
-                s_BasePath = Application.streamingAssetsPath + Path.DirectorySeparatorChar;
+                s_BasePath = Application.streamingAssetsPath + "/" + k_AssetBundles + "/";
             }
 
             if (string.IsNullOrEmpty(s_UpdatePath))
             {
-                s_UpdatePath = Application.persistentDataPath + Path.DirectorySeparatorChar;
+                s_UpdatePath = Application.persistentDataPath + "/" + k_AssetBundles + "/";
             }
 
             //var path = string.Format("{0}/{1}", s_BasePath, Versions.Dataname);

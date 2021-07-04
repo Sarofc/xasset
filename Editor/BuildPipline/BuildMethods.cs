@@ -35,7 +35,7 @@ namespace Saro.XAsset.Build
         [XAssetBuildMethod(5, "Copy AssetBundles")]
         private static void CopyAssetBundles()
         {
-            var destFolder = Application.streamingAssetsPath + "/" + BuildScript.GetPlatformName();
+            var destFolder = Application.streamingAssetsPath + "/" + XAssetComponent.k_AssetBundles;
             BuildScript.CopyAssetBundlesTo(destFolder);
             AssetDatabase.Refresh();
             Debug.Log($"[XAsset] Copy AssetBundles to SreammingFolder: {destFolder}");

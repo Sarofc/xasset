@@ -2,16 +2,16 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using Saro.Core;
 using UnityEngine;
 using UnityEngine.Networking;
 using UnityEngine.SceneManagement;
-using Debug = UnityEngine.Debug;
-using Object = UnityEngine.Object;
-
-using Saro.Core;
 
 namespace Saro.XAsset
 {
+    using Debug = UnityEngine.Debug;
+    using Object = UnityEngine.Object;
+
     public enum ELoadState
     {
         Init,
@@ -184,6 +184,7 @@ namespace Saro.XAsset
             if (XAssetComponent.s_RuntimeMode)
             {
                 var assetBundleName = m_AssetName.Replace(".asset", ".unity3d").ToLower();
+                Debug.LogError($"[XAsset] asset: {m_AssetName} \nurl: {Url} \nbundleName: {assetBundleName}");
                 m_Request = XAssetComponent.Get().LoadBundleAsync(assetBundleName);
                 m_Request.Completed = Request_completed;
                 m_LoadState = ELoadState.LoadAssetBundle;
