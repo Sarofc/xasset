@@ -10,7 +10,7 @@ using UnityEngine.Networking;
 
 namespace Saro.XAsset.Update
 {
-    [ObjectSystem]
+    [FObjectSystem]
     internal class AssetUpdaterComponentAwakeSystem : AwakeSystem<AssetUpdaterComponent>
     {
         public override void Awake(AssetUpdaterComponent self)
@@ -30,7 +30,7 @@ namespace Saro.XAsset.Update
     //    }
     //}
 
-    [ObjectSystem]
+    [FObjectSystem]
     internal class AssetUpdaterComponentDestroySystem : DestroySystem<AssetUpdaterComponent>
     {
         public override void Destroy(AssetUpdaterComponent self)
@@ -49,7 +49,7 @@ namespace Saro.XAsset.Update
      * Ê¹ÓÃEventSystem Œ¢ui½âñî
      * 
      */
-    public sealed class AssetUpdaterComponent : Entity, IUpdater, INetworkMonitorListener
+    public sealed class AssetUpdaterComponent : FEntity, IUpdater, INetworkMonitorListener
     {
         private enum EStep
         {

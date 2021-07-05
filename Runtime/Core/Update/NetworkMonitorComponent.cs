@@ -8,7 +8,7 @@ namespace Saro.XAsset.Update
         void OnReachablityChanged(NetworkReachability reachability);
     }
 
-    [ObjectSystem]
+    [FObjectSystem]
     public class NetworkMonitorComponentAwakeSystem : AwakeSystem<NetworkMonitorComponent>
     {
         public override void Awake(NetworkMonitorComponent self)
@@ -17,7 +17,7 @@ namespace Saro.XAsset.Update
         }
     }
 
-    [ObjectSystem]
+    [FObjectSystem]
     public class NetworkMonitorComponentUpdateSystem : UpdateSystem<NetworkMonitorComponent>
     {
         public override void Update(NetworkMonitorComponent self)
@@ -26,7 +26,7 @@ namespace Saro.XAsset.Update
         }
     }
 
-    [ObjectSystem]
+    [FObjectSystem]
     public class NetworkMonitorComponentDestroySystem : DestroySystem<NetworkMonitorComponent>
     {
         public override void Destroy(NetworkMonitorComponent self)
@@ -35,7 +35,7 @@ namespace Saro.XAsset.Update
         }
     }
 
-    public class NetworkMonitorComponent : Entity
+    public class NetworkMonitorComponent : FEntity
     {
         private NetworkReachability m_Reachability;
         public INetworkMonitorListener Listener { get; set; }

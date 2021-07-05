@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace Saro.XAsset.Update
 {
-    [ObjectSystem]
+    [FObjectSystem]
     internal class DownloaderComponentStartSystem : StartSystem<DownloaderComponent>
     {
         public override void Start(DownloaderComponent self)
@@ -15,7 +15,7 @@ namespace Saro.XAsset.Update
         }
     }
 
-    [ObjectSystem]
+    [FObjectSystem]
     internal class DownloaderComponentUpdateSystem : UpdateSystem<DownloaderComponent>
     {
         public override void Update(DownloaderComponent self)
@@ -24,7 +24,7 @@ namespace Saro.XAsset.Update
         }
     }
 
-    [ObjectSystem]
+    [FObjectSystem]
     internal class DownloaderComponentDestroySystem : DestroySystem<DownloaderComponent>
     {
         public override void Destroy(DownloaderComponent self)
@@ -34,7 +34,7 @@ namespace Saro.XAsset.Update
     }
 
 
-    public sealed class DownloaderComponent : Entity
+    public sealed class DownloaderComponent : FEntity
     {
         private const float k_BYTES_2_MB = 1f / (1024 * 1024);
 

@@ -10,7 +10,7 @@ using Saro.Tasks;
 
 namespace Saro.XAsset
 {
-    [ObjectSystem]
+    [FObjectSystem]
     internal sealed class XAssetComponentUpdateSystem : UpdateSystem<XAssetComponent>
     {
         public override void Update(XAssetComponent self)
@@ -26,7 +26,7 @@ namespace Saro.XAsset
      * 
      */
     [Serializable]
-    public sealed class XAssetComponent : Entity, IAssetInterface
+    public sealed class XAssetComponent : FEntity, IAssetInterface
     {
         public const string k_AssetBundles = "DLC";
         public const string k_XAssetManifestAsset = "Assets/XAsset/XAssetManifest.asset";
