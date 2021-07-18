@@ -1,8 +1,4 @@
-﻿using UnityEngine;
-using UnityEditor;
-using System;
-using Saro.SaroEditor;
-using System.Collections.Generic;
+﻿using UnityEditor;
 
 namespace Saro.XAsset.Build
 {

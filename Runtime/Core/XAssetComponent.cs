@@ -1,12 +1,11 @@
 ﻿#define DEBUG_XASSET
 
+using Saro.Core;
+using Saro.Tasks;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
-
-using Saro.Core;
-using Saro.Tasks;
 
 namespace Saro.XAsset
 {

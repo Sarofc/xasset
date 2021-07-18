@@ -1,9 +1,8 @@
-using UnityEngine;
 using UnityEditor;
 
 namespace Saro.XAsset.Build
 {
-    class ApplyRuleMenuItem
+    internal class ApplyRuleMenuItem
     {
         [MenuItem("Assets/Apply Rule/Text", false, 1)]
         private static void ApplyRuleText()

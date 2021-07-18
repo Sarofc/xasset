@@ -1,8 +1,7 @@
-﻿using System;
+﻿using Saro.IO;
+using System;
 using System.Collections.Generic;
 using System.IO;
-
-using Saro.IO;
 
 namespace Saro.XAsset.Update
 {

@@ -1,15 +1,13 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
 using UnityEditor;
-using System.Collections.Generic;
-using System.Reflection;
-using Saro.Core;
+using UnityEngine;
 
 namespace Saro.XAsset.Build
 {
     public sealed class BuildWindow : EditorWindow
     {
         [MenuItem("Tools/Build")]
-        static void ShowBuildWindow()
+        private static void ShowBuildWindow()
         {
             var window = GetWindow<BuildWindow>();
             window.titleContent = new GUIContent("MGF-Build");
@@ -35,7 +33,7 @@ namespace Saro.XAsset.Build
             }
         }
 
-        static GUIStyles s_GUIStyles;
+        private static GUIStyles s_GUIStyles;
 
         private void OnEnable()
         {
@@ -53,7 +51,7 @@ namespace Saro.XAsset.Build
             DrawToolBar();
         }
 
-        void DrawToolBar()
+        private void DrawToolBar()
         {
             m_Selected = GUILayout.Toolbar(m_Selected, s_Toolbar);
             m_ScrolPos = EditorGUILayout.BeginScrollView(m_ScrolPos);
@@ -71,7 +69,7 @@ namespace Saro.XAsset.Build
             EditorGUILayout.EndScrollView();
         }
 
-        void DrawBuildSettings()
+        private void DrawBuildSettings()
         {
             EditorGUILayout.LabelField("Platform: " + EditorUserBuildSettings.activeBuildTarget, s_GUIStyles.style_FontBlodAndItalic);
 
@@ -117,7 +115,7 @@ namespace Saro.XAsset.Build
             }
         }
 
-        void DrawBuildOptions()
+        private void DrawBuildOptions()
         {
             if (m_BuildMethods != null)
             {
@@ -155,7 +153,7 @@ namespace Saro.XAsset.Build
             }
         }
 
-        void DrawBuildMethod(int index, BuildMethod buildMethod)
+        private void DrawBuildMethod(int index, BuildMethod buildMethod)
         {
             if (buildMethod != null)
             {
@@ -192,7 +190,7 @@ namespace Saro.XAsset.Build
             }
         }
 
-        void DrawButtons()
+        private void DrawButtons()
         {
             if (GUILayout.Button("Run HFS"))
             {
@@ -202,31 +200,29 @@ namespace Saro.XAsset.Build
             }
         }
 
-
-        static string[] s_Toolbar = new string[]
+        private static string[] s_Toolbar = new string[]
         {
              "XAssetSettings"
         };
-
-        Editor m_CachedEditor;
-        List<BuildMethod> m_BuildMethods;
-        XAssetSettings m_XAssetSettings;
+        private Editor m_CachedEditor;
+        private List<BuildMethod> m_BuildMethods;
+        private XAssetSettings m_XAssetSettings;
         private int m_Selected;
         private Vector2 m_ScrolPos;
 
-        void EnsureBuildMethods()
+        private void EnsureBuildMethods()
         {
             m_BuildMethods = BuildMethod.BuildMethods;
         }
 
-        void EnsureXAssetSettings()
+        private void EnsureXAssetSettings()
         {
             m_XAssetSettings = BuildScript.GetXAssetSettings();
             BuildScript.GetXAssetManifest();
             BuildScript.GetXAssetBuildRules();
         }
 
-        void ExecuteAction(System.Action action)
+        private void ExecuteAction(System.Action action)
         {
             EditorApplication.delayCall = () =>
             {
